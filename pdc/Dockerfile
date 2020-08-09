@@ -2,6 +2,7 @@ FROM ubuntu:18.04
 LABEL maintainer "Tsutomu Nakamura<tsuna.0x00@gmail.com>"
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y && \
         DEBIAN_FRONTEND=noninteractive apt-get install -y pkg-config attr acl samba smbclient ldap-utils \
         winbind libnss-winbind libpam-winbind \
         supervisor openvpn inetutils-ping \
