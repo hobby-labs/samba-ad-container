@@ -5,6 +5,5 @@ LABEL maintainer "Tsutomu Nakamura<tsuna.0x00@gmail.com>"
 RUN apk update && \
         apk add git
 
-#ENTRYPOINT ["tail", "-f", "/dev/null"]
-ENTRYPOINT ["bash", "-l"]
+ENTRYPOINT ["/usr/bin/env"]
 
