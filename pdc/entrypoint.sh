@@ -1,7 +1,4 @@
 #!/bin/bash
-
-INITIALIZED_FLAG_FILE="/.initialized"
-
 main() {
     echo "$FOO" > /var/tmp/result.txt
     tail -f /dev/null
@@ -33,7 +30,7 @@ main() {
 
 init_env_variables() {
     if [[ -z "$CONTAINER_IP" ]]; then
-        export CONTAINER_IP=$(ip add show | grep -E '^\s+inet .* scope global .*' | awk '{print $2}' | cut -d '/' -f 1)
+        export CONTAINER_IP=$(get_container_ip)
 
         if [[ ! "$CONTAINER_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "ERROR: Attempting get IP from the container because the environment variable CONTAINER_IP was empty but failed." >&2
@@ -95,6 +92,10 @@ is_already_initialized() {
 
 flag_initialized() {
     touch "$INITIALIZED_FLAG_FILE"
+}
+
+get_container_ip() {
+    ip add show | grep -E '^\s+inet .* scope global .*' | awk '{print $2}' | cut -d '/' -f 1
 }
 
 main "$@" || exit $?
