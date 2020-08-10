@@ -6,11 +6,12 @@ function setup() {
 }
 
 function teardown() {
-    true
+    rm -f "$INITIALIZED_FLAG_FILE"
 }
 
 @test '#test 01' {
-    true
+    run flag_initialized
+    [[ -f "$INITIALIZED_FLAG_FILE" ]]
 }
 
 @test '#test 02' {
