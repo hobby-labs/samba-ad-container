@@ -4,8 +4,13 @@ main() {
     local test_file="$1"
 
     cd "${script_dir}/../../"
-    #docker run --rm --name bats --hostname bats --volume "${PWD}:/a:ro" bats/bats:latest /a/test/${test_file}
-    docker run --rm --volume "${PWD}:/a:ro" bats/bats:latest /a/test
+    git submodule update --init --recursive
+
+    if [[ -f /.dockerenv ]]; then
+        bats "${@:-./test}"
+    else
+        docker run --rm --volume "${PWD}:/a:ro" bats/bats:latest "$@"
+    fi
 }
 
 main "$@"

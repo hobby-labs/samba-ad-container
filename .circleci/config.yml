@@ -1,0 +1,9 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: hobbylabs/test-samba-ad-container
+    steps:
+      - checkout
+      - run: make test
+
