@@ -14,6 +14,6 @@ ENV LANG=C.UTF-8
 
 COPY entrypoint.sh /opt/entrypoint.sh
 RUN chmod u+x /opt/entrypoint.sh
+
 #ENTRYPOINT ["/opt/entrypoint.sh"]
-CMD ["/opt/entrypoint.sh"]
 
