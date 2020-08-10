@@ -6,4 +6,5 @@ RUN apk update && \
         apk add git
 
 #ENTRYPOINT ["/opt/entrypoint.sh"]
+ENTRYPOINT ["tail", "-f", "/dev/null"]
 
