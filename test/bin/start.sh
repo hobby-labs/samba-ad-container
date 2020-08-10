@@ -6,8 +6,8 @@ main() {
     cd "${script_dir}/../../"
     git submodule update --init --recursive
 
-    if [[ -f .dockerenv ]]; then
-        bats ./test
+    if [[ -f /.dockerenv ]]; then
+        bats "${@:-./test}"
     else
         docker run --rm --volume "${PWD}:/a:ro" bats/bats:latest "$@"
     fi
