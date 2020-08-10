@@ -1,3 +1,6 @@
+#!/usr/bin/env bats
+load helpers "/pdc/entrypoint.sh"
+
 function setup() {
     true
 }

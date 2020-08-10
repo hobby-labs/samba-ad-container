@@ -98,5 +98,8 @@ get_container_ip() {
     ip add show | grep -E '^\s+inet .* scope global .*' | awk '{print $2}' | cut -d '/' -f 1
 }
 
-main "$@" || exit $?
+if [[ "${#BASH_SOURCE[@]}" -eq 1 ]]; then
+    main "$@"
+    exit $?
+fi
 
