@@ -1,0 +1,9 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: tsutomu/test-samba-ad-container
+    steps:
+      - checkout
+      - run: make test
+
