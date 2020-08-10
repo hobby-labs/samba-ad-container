@@ -1,0 +1,3 @@
+[submodule "test/lib/stub4bats.sh"]
+	path = test/lib/stub4bats.sh
+	url = https://github.com/TsutomuNakamura/stub4bats.sh
