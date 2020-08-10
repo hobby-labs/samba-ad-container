@@ -9,7 +9,7 @@ main() {
     if [[ -f .dockerenv ]]; then
         bats ./test
     else
-        docker run --rm --volume "${PWD}:/a:ro" bats/bats:latest /a/test
+        docker run --rm --volume "${PWD}:/a:ro" bats/bats:latest "$@"
     fi
 }
 
