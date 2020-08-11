@@ -3,9 +3,6 @@
 INITIALIZED_FLAG_FILE="/.ad_has_initialized"
 
 main() {
-    echo "$FOO" > /var/tmp/result.txt
-    tail -f /dev/null
-
     init_env_variables || {
         echo "ERROR: Failed to initialize environment variables." >&2
         return 1
