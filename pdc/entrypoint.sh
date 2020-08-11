@@ -57,6 +57,8 @@ init_env_variables() {
                  "You can change it after running samba with" \
                  "\"samba-tool user setpassword Administrator --newpassword=new_password -U Administrator\""
     fi
+
+    return 0
 }
 
 run_primary_dc() {
@@ -95,7 +97,7 @@ flag_initialized() {
 }
 
 get_container_ip() {
-    ip add show | grep -E '^\s+inet .* scope global .*' | awk '{print $2}' | cut -d '/' -f 1
+    ip add show | grep -E '^\s+inet .* scope global .*' | awk '{print $2}' | cut -d '/' -f 1 | tail -1
 }
 
 if [[ "${#BASH_SOURCE[@]}" -eq 1 ]]; then
