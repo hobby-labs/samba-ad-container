@@ -62,7 +62,7 @@ init_env_variables() {
 }
 
 run_primary_dc() {
-    if is_already_initialized; then
+    if ! is_already_initialized; then
         if ! build_primary_dc; then
             echo "ERROR: Failed to build primary DC due to previous error." >&2
             return 1
