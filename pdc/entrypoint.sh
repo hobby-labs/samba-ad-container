@@ -68,7 +68,7 @@ run_primary_dc() {
             return 1
         fi
 
-        do_initialized
+        flag_initialized
     fi
 
     start_samba
