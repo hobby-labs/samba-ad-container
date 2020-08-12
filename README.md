@@ -2,9 +2,10 @@
 
 # How to run a primary DC
 
-## Create macvlan network first
-Create macvlan network that computers in your network to be able to communicate with the primary DC container first.
-For example, your container's host machine is located in the network `192.168.1.0/24`, you can create a macvlan network like below.
+# Prerequisite
+## Create macvlan network
+Create macvlan network that your organization's computers in your network to be able to communicate seamlessly with the primary DC container.
+For example, your container's host is in the network `192.168.1.0/24`, you can create a macvlan network like below.
 
 ```
 docker network create -d macvlan \
@@ -35,6 +36,10 @@ docker run --name pdc01 --hostname pdc01 \
     -d hobbylabs/samba-ad-container
 ```
 
+You should specify IP of the `--dns` as same as the value of `--ip`.
+This prevent the DNS update error after running Samba.
+
+## Environment variables
 | Name of variable | Required | Devault value | Note |
 | ---------------- | -------- | ------------- | ---- |
 | DC_TYPE          | Yes      | -             | This parameter requires "PARIMARY_DC" or "SECONDARY_DC" or "RESTORED_DC". "PARIMARY_DC" will build a Samba as a primary DC. "SECONDARY_DC" will build a Samba as a secondary DC. "RESTORED_DC" will build a Samba that restored from backup-data. "RESTORED_DC" is useful as the temporary DC if you want to restore Samba that has a same host name that had been running previously. |
@@ -43,8 +48,3 @@ docker run --name pdc01 --hostname pdc01 \
 | DOMAIN | - | (Upper case of the first element of DOMAIN_FQDN that splitted by ".") | Domain name of your DC. For example, if you do not specify it and you specified DOMAIN_FQDN=corp.mysite.example.com, "CORP" will be used. |
 | ADMIN_PASSWORD | - | p@ssword0 | Password of the Administrator. You can change it after running Samba with samba-tool command. |
 | DNS_FORWARDER | - | 8.8.8.8 | DNS forwarder for the Samba. This value will be written as the "dns forwarder" in /etc/samba/smb.conf |
-
-
-
-
-
