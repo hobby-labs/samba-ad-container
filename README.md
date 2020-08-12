@@ -1,7 +1,5 @@
 # samba-ad-container
 
-# How to run a primary DC
-
 # Prerequisite
 ## Create macvlan network
 Create macvlan network that your organization's computers in your network to be able to communicate seamlessly with the primary DC container.
@@ -18,6 +16,7 @@ This command will create macvlan network named `office_network` on the interface
 Containers that attaches this network will be able to communicate other hosts that located in the same network `192.168.1.0/24` by their mac address directly.
 Containers do not need NAT interface like docker0.
 
+# How to run a primary DC
 ## Run primary DC
 Run a primary DC like below.
 
