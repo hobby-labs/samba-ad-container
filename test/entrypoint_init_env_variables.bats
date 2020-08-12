@@ -17,15 +17,16 @@ function teardown() {
 
     command echo "$output"
     [[ "$status" -eq 0 ]]
-    [[ "$(stub_called_times echo)"             -eq 3 ]]
+    [[ "$(stub_called_times echo)"             -eq 4 ]]
     [[ "$(stub_called_times get_container_ip)" -eq 1 ]]
 
     stub_called_with_exactly_times echo 1 "NOTICE: Environment variable DOMAIN_FQDN was empty." "Set DOMAIN_FQDN=\"corp.mysite.example.com\" by default."
     stub_called_with_exactly_times echo 1 "NOTICE: Environment variable DOMAIN was empty." "Set DOMAIN=\"CORP\" by default."
     stub_called_with_exactly_times echo 1 "NOTICE: Environment variable ADMIN_PASSWORD was empty." "Set ADMIN_PASSWORD=\"p@ssword0\" by default." "You can change it after running samba with" "\"samba-tool user setpassword Administrator --newpassword=new_password -U Administrator\""
+    stub_called_with_exactly_times echo 1 "NOTICE: Environment variable DNS_FORWARDER was empty." "Set DNS_FORWARDER=\"8.8.8.8\" by default." "You can change it by editing /etc/samba/smb.conf after provisioned samba"
 }
 
-@test '#init_env_variables return 1 if get_container_ip filed to get IP' {
+@test '#init_env_variables return 1 if get_container_ip failed to get IP' {
     run init_env_variables
 
     command echo "$output"
@@ -41,6 +42,7 @@ function teardown() {
     DOMAIN_FQDN="corp.mysite.example.com"
     DOMAIN="CORP"
     ADMIN_PASSWORD="p@ssword0"
+    DNS_FORWARDER="192.168.1.1"
     run init_env_variables
 
     command echo "$output"
