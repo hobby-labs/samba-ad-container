@@ -5,7 +5,7 @@ function setup() {
     stub is_already_initialized
     stub start_samba
     stub build_primary_dc
-    stub do_initialized
+    stub flag_initialized
     stub echo
 }
 
@@ -20,7 +20,7 @@ function teardown() {
     [[ "$(stub_called_times is_already_initialized)"    -eq 1 ]]
     [[ "$(stub_called_times start_samba)"               -eq 1 ]]
     [[ "$(stub_called_times build_primary_dc)"          -eq 0 ]]
-    [[ "$(stub_called_times do_initialized)"            -eq 0 ]]
+    [[ "$(stub_called_times flag_initialized)"          -eq 0 ]]
     [[ "$(stub_called_times echo)"                      -eq 0 ]]
 }
 
@@ -32,7 +32,7 @@ function teardown() {
     [[ "$(stub_called_times is_already_initialized)"    -eq 1 ]]
     [[ "$(stub_called_times start_samba)"               -eq 1 ]]
     [[ "$(stub_called_times build_primary_dc)"          -eq 1 ]]
-    [[ "$(stub_called_times do_initialized)"            -eq 1 ]]
+    [[ "$(stub_called_times flag_initialized)"          -eq 1 ]]
     [[ "$(stub_called_times echo)"                      -eq 0 ]]
 }
 
@@ -45,7 +45,7 @@ function teardown() {
     [[ "$(stub_called_times is_already_initialized)"    -eq 1 ]]
     [[ "$(stub_called_times start_samba)"               -eq 0 ]]
     [[ "$(stub_called_times build_primary_dc)"          -eq 1 ]]
-    [[ "$(stub_called_times do_initialized)"            -eq 0 ]]
+    [[ "$(stub_called_times flag_initialized)"          -eq 0 ]]
     [[ "$(stub_called_times echo)"                      -eq 1 ]]
     stub_called_with_exactly_times echo 1 "ERROR: Failed to build primary DC due to previous error."
 }
