@@ -23,11 +23,7 @@ Run a primary DC like below.
 ```
 docker run --name pdc01 --hostname pdc01 \
     -e DC_TYPE="PARIMARY_DC" \
-    -e CONTAINER_IP=192.168.1.71 \
     -e DOMAIN_FQDN="corp.mysite.example.com" \
-    -e DOMAIN="CORP" \
-    -e ADMIN_PASSWORD="p@ssword0" \
-    -e DNS_FORWARDER="192.168.1.1" \
     --network office_network \
     --privileged \
     --ip 192.168.1.71 \
