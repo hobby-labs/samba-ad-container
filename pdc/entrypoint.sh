@@ -58,6 +58,13 @@ init_env_variables() {
                  "\"samba-tool user setpassword Administrator --newpassword=new_password -U Administrator\""
     fi
 
+    if [[ -z "$DNS_FORWARDER" ]]; then
+        export DNS_FORWARDER="8.8.8.8"
+        echo "NOTICE: Environment variable DNS_FORWARDER was empty." \
+                 "Set DNS_FORWARDER=\"8.8.8.8\" by default." \
+                 "You can change it by editing /etc/samba/smb.conf after provisioned samba"
+    fi
+
     return 0
 }
 
@@ -97,6 +104,12 @@ build_primary_dc() {
         echo "ERROR: Failed to \"samba-tool domain provision\"[ret=${ret}]." >&2
         return 1
     fi
+
+    # Change dns forwarder in /etc/samba/smb.conf
+    sed -i -e "s/dns forwarder = .*/dns forwarder = ${DNS_FORWARDER}/g" /etc/samba/smb.conf || {
+        echo "ERROR: Failed to modify /etc/samba/smb.conf to change \"dns forwarder = ${DNS_FORWARDER}\" after DC has profisioned" >&2
+        return 1
+    }
 
     return 0
 }
