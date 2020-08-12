@@ -75,13 +75,30 @@ run_primary_dc() {
 }
 
 build_primary_dc() {
-    mv /etc/krb5.conf /etc/krb5.conf.org
-    mv /etc/samba/smb.conf /etc/samba/smb.conf.org
+    mv -f /etc/krb5.conf /etc/krb5.conf.org
+    if [[ -f "/etc/krb5.conf" ]]; then
+        echo "ERROR: Failed to delete(move) /etc/krb5.conf before running \"samba-tool domain provision\". Processes following it will be quitted." >&2
+        return 1
+    fi
+
+    mv -f /etc/samba/smb.conf /etc/samba/smb.conf.org    # This will overwrite smb.conf.org if it is already existed
+    if [[ -f "/etc/samba/smb.conf" ]]; then
+        echo "ERROR: Failed to delete(move) /etc/samba/smb.conf before running \"samba-tool domain provision\". Processes following it will be quitted." >&2
+        return 1
+    fi
 
     samba-tool domain provision --use-rfc2307 --domain=${DOMAIN} \
         --realm=${DOMAIN_FQDN^^} --server-role=dc \
         --dns-backend=SAMBA_INTERNAL --adminpass=${ADMIN_PASSWORD} --host-ip=${CONTAINER_IP}
 
+    local ret=$?
+
+    if [[ $ret -ne 0 ]]; then
+        echo "ERROR: Failed to \"samba-tool domain provision\"[ret=${ret}]." >&2
+        return 1
+    fi
+
+    return 0
 }
 
 start_samba() {
