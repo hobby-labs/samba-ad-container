@@ -76,6 +76,9 @@ Then you should save data `/data/pdc01/etc/samba` and `/data/pdc01/var/lib/samba
 
 ## Restore PDC
 TODO:
+This program will add a feature to restore data like this journal.
+
+https://github.com/hobby-labs/samba-ad-container/wiki/Strategies-of-backup-and-restore-AD#restore-strategies
 
 ## Restore PDC (Unofficial way)
 Restore data `/etc/samba` and `/var/lib/samba` to the directory on the host.
