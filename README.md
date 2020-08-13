@@ -44,7 +44,7 @@ This prevent the DNS update error after running Samba.
 | ADMIN_PASSWORD | No | p@ssword0 | Password of the Administrator. You can change it after running Samba with samba-tool command. |
 | DNS_FORWARDER | No | 8.8.8.8 | DNS forwarder for the Samba. This value will be written as the "dns forwarder" in /etc/samba/smb.conf |
 
-## Backup
+## Backup PDC
 You can use samba-tool to backup Samba data.
 
 ```
@@ -55,4 +55,42 @@ You can use samba-tool to backup Samba data.
 -> samba-backup-corp.mysite.example.com-YYYY-MM-DDThh-mm-ss.SSSSSS.tar.bz2
 ```
 
-Then you should store `samba-backup-corp.mysite.example.com-YYYY-MM-DDThh-mm-ss.SSSSSS.tar.bz2` to safely place like NAS or cloud storage not to missing it.
+Then you should save `samba-backup-corp.mysite.example.com-YYYY-MM-DDThh-mm-ss.SSSSSS.tar.bz2` to more safely place like NAS or cloud storage not to missing it.
+
+## Backup PDC (Unofficial way)
+You can run the container mounting `/etc/samba` and `/var/lib/samba` on the container like below.
+
+```
+# docker run --name pdc01 --hostname pdc01 \
+    -e DC_TYPE="PARIMARY_DC" \
+    --network office_network \
+    --privileged \
+    --ip 192.168.1.71 \
+    --dns 192.168.1.71 \
+    --volume /data/pdc01/etc/samba:/etc/samba \
+    --volume /data/pdc01/var/lib/samba:/var/lib/samba \
+    -d hobbylabs/samba-ad-container
+```
+
+Then you should save data `/data/pdc01/etc/samba` and `/data/pdc01/var/lib/samba` to more safely place like NAS or cloud storage not to missing it.
+
+## Restore PDC
+TODO:
+
+## Restore PDC (Unofficial way)
+Restore data `/etc/samba` and `/var/lib/samba` to the directory on the host.
+For example, they were restored to `/data/pdc01/etc/samba` and `/data/pdc01/var/lib/samba`.
+Then you can just run the container with mounting them like below.
+
+```
+# docker run --name pdc01 --hostname pdc01 \
+    -e DC_TYPE="PARIMARY_DC" \
+    --network office_network \
+    --privileged \
+    --ip 192.168.1.71 \
+    --dns 192.168.1.71 \
+    --volume /data/pdc01/etc/samba:/etc/samba \
+    --volume /data/pdc01/var/lib/samba:/var/lib/samba \
+    -d hobbylabs/samba-ad-container
+```
+
