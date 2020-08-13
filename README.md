@@ -43,3 +43,16 @@ This prevent the DNS update error after running Samba.
 | DOMAIN | No | (Upper case of the first element of DOMAIN_FQDN that splitted by ".") | Domain name of your DC. For example, if you do not specify it and you specified DOMAIN_FQDN=corp.mysite.example.com, "CORP" will be used. |
 | ADMIN_PASSWORD | No | p@ssword0 | Password of the Administrator. You can change it after running Samba with samba-tool command. |
 | DNS_FORWARDER | No | 8.8.8.8 | DNS forwarder for the Samba. This value will be written as the "dns forwarder" in /etc/samba/smb.conf |
+
+## Backup
+You can use samba-tool to backup Samba data.
+
+```
+# docker exec -ti plainad samba-tool domain backup online --targetdir=/var/tmp --server=127.0.0.1 -UAdministrator%secret
+# docker cp plainad /var/tmp/samba-backup-* .
+# docker exec plainad rm -f /var/tmp/samba-backup-*
+# ls -l ./samba-backup-*
+-> samba-backup-corp.mysite.example.com-YYYY-MM-DDThh-mm-ss.SSSSSS.tar.bz2
+```
+
+Then you should store `samba-backup-corp.mysite.example.com-YYYY-MM-DDThh-mm-ss.SSSSSS.tar.bz2` to safely place like NAS or cloud storage not to missing it.
