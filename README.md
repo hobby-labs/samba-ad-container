@@ -48,9 +48,9 @@ This prevent the DNS update error after running Samba.
 You can use samba-tool to backup Samba data.
 
 ```
-# docker exec -ti plainad samba-tool domain backup online --targetdir=/var/tmp --server=127.0.0.1 -UAdministrator%secret
-# docker cp plainad /var/tmp/samba-backup-* .
-# docker exec plainad rm -f /var/tmp/samba-backup-*
+# docker exec -ti pdc01 samba-tool domain backup online --targetdir=/var/tmp --server=127.0.0.1 -UAdministrator%secret
+# docker cp pdc01 /var/tmp/samba-backup-* .
+# docker exec pdc01 rm -f /var/tmp/samba-backup-*
 # ls -l ./samba-backup-*
 -> samba-backup-corp.mysite.example.com-YYYY-MM-DDThh-mm-ss.SSSSSS.tar.bz2
 ```
