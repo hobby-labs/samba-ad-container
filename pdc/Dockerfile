@@ -7,7 +7,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
         supervisor openvpn inetutils-ping \
         libpam-krb5 krb5-config krb5-user \
         vim git dnsutils net-tools && \
-        apt-get clean
+        apt-get clean && \
+        rm -f /etc/samba/smb.conf /etc/krb5.conf
 
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
