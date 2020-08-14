@@ -78,41 +78,67 @@ run_primary_dc() {
     start_samba
 }
 
-run_secondary_dc() {
-    true
-}
-
 build_primary_dc() {
-    mv -f /etc/krb5.conf /etc/krb5.conf.org
-    if [[ -f "/etc/krb5.conf" ]]; then
-        echo "ERROR: Failed to delete(move) /etc/krb5.conf before running \"samba-tool domain provision\". Processes following it will be quitted." >&2
-        return 1
-    fi
+    local ret=0
+    local flag_resotre_smb_conf=0
 
-    mv -f /etc/samba/smb.conf /etc/samba/smb.conf.org    # This will overwrite smb.conf.org if it is already existed
-    if [[ -f "/etc/samba/smb.conf" ]]; then
-        echo "ERROR: Failed to delete(move) /etc/samba/smb.conf before running \"samba-tool domain provision\". Processes following it will be quitted." >&2
+    pre_provisioning || {
+        echo "ERROR: Failed to pre_provisioning tasks" >&2
         return 1
-    fi
+    }
 
     samba-tool domain provision --use-rfc2307 --domain=${DOMAIN} \
         --realm=${DOMAIN_FQDN^^} --server-role=dc \
         --dns-backend=SAMBA_INTERNAL --adminpass=${ADMIN_PASSWORD} --host-ip=${CONTAINER_IP}
 
-    local ret=$?
+    local ret_samba_tool=$?
 
-    if [[ $ret -ne 0 ]]; then
-        echo "ERROR: Failed to \"samba-tool domain provision\"[ret=${ret}]." >&2
-        return 1
-    fi
-
-    # Change dns forwarder in /etc/samba/smb.conf
-    sed -i -e "s/dns forwarder = .*/dns forwarder = ${DNS_FORWARDER}/g" /etc/samba/smb.conf || {
-        echo "ERROR: Failed to modify /etc/samba/smb.conf to change \"dns forwarder = ${DNS_FORWARDER}\" after DC has profisioned" >&2
+    post_provisioning || {
+        echo "ERROR: Failed to post_provisioning tasks" >&2
         return 1
     }
 
+    if [[ $ret_samba_tool -ne 0 ]]; then
+        echo "ERROR: Failed to \"samba-tool domain provision\"[ret=${ret_samba_tool}]." >&2
+        return 1
+    fi
+
     return 0
+}
+
+pre_provisioning() {
+    # /etc/krb5.conf and /etc/samba/smb.conf has already removed at creating docker images.
+    # If /etc/samba/smb.conf is existed, it is a file mounted by a user.
+    if [[ -f "/etc/samba/smb.conf" ]]; then
+        flag_restore_smb_conf=1
+
+        mv -f /etc/samba/smb.conf /etc/samba/smb.conf.bak
+        ret=$?
+
+        if [[ $ret -ne 0 ]]; then
+            echo "ERROR: Failed to move /etc/samba/smb.conf before running \"samba-tool domain provision\". Provisioning process will be quitted." >&2
+            return 1
+        fi
+    fi
+}
+
+post_provisioning() {
+    if [[ $flag_restore_smb_conf -eq 1 ]]; then
+        mv -f /etc/samba/smb.conf.bak /etc/samba/smb.conf
+        ret=$?
+
+        if [[ $ret -ne 0 ]]; then
+            echo "ERROR: Failed to restore smb.conf after running \"samba-tool domain provision\"." >&2
+            return 1
+        fi
+
+    else
+        # Change dns forwarder in /etc/samba/smb.conf
+        sed -i -e "s/dns forwarder = .*/dns forwarder = ${DNS_FORWARDER}/g" /etc/samba/smb.conf || {
+            echo "ERROR: Failed to modify /etc/samba/smb.conf to change \"dns forwarder = ${DNS_FORWARDER}\" after DC has provisioned" >&2
+            return 1
+        }
+    fi
 }
 
 start_samba() {
