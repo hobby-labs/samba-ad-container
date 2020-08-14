@@ -102,7 +102,7 @@ build_dc() {
                 --dns-backend=SAMBA_INTERNAL --adminpass=${ADMIN_PASSWORD} --host-ip=${CONTAINER_IP}
             ;;
         "SECONDARY_DC")
-            # TODO:
+            samba-tool domain join ${DOMAIN_FQDN,,} DC -U"Administrator"%"${ADMIN_PASSWORD}"
             ;;
         "RESTORED_DC")
             # TODO:
@@ -112,7 +112,6 @@ build_dc() {
             return 1
             ;;
     esac
-
     local ret_samba_tool=$?
 
     post_provisioning || {
