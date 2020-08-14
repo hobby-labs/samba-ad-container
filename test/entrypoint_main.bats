@@ -3,7 +3,7 @@ load helpers "/pdc/entrypoint.sh"
 
 function setup() {
     stub_and_eval init_env_variables '{ return 0; }'
-    stub run_primary_dc
+    stub run_dc
     stub echo
 }
 
@@ -32,13 +32,19 @@ function teardown() {
     stub_called_with_exactly_times echo 1 "ERROR: Unsupported DC_TYPE environment variable (DC_TYPE=FOO). This program only support \"PRIMARY_DC\", \"SECONDARY_DC\", \"TEMPORARY_DC\" or \"RESTORED_PRIMARY_DC\""
 }
 
-@test '#main should return 0 if DC_TYPE is PRIMARY_DC and run_primary_dc has return 0' {
+@test '#main should return 0 if DC_TYPE=PRIMARY_DC and run_primary_dc has return 0' {
     DC_TYPE="PRIMARY_DC"
-    run main
-
-    command echo "$output"
+    run main; command echo "$output"
     [[ "$status" -eq 0 ]]
-    [[ "$(stub_called_times run_primary_dc)" -eq 1 ]]
+    [[ "$(stub_called_times run_dc)" -eq 1 ]]
+    [[ "$(stub_called_times echo)" -eq 0 ]]
+}
+
+@test '#main should return 0 if DC_TYPE=SECONDARY_DC and run_primary_dc has return 0' {
+    DC_TYPE="SECONDARY_DC"
+    run main; command echo "$output"
+    [[ "$status" -eq 0 ]]
+    [[ "$(stub_called_times run_dc)" -eq 1 ]]
     [[ "$(stub_called_times echo)" -eq 0 ]]
 }
 

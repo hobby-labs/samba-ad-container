@@ -13,11 +13,8 @@ main() {
     }
 
     case "$DC_TYPE" in
-        "PRIMARY_DC")
-            run_primary_dc
-            ;;
-        "SECONDARY_DC")
-            run_secondary_dc
+        "PRIMARY_DC" | "SECONDARY_DC")
+            run_dc
             ;;
         "RESTORED_DC")
             # TODO:
@@ -69,10 +66,14 @@ init_env_variables() {
     return 0
 }
 
-run_primary_dc() {
+run_dc() {
+
     if ! is_already_initialized; then
-        if ! build_primary_dc; then
-            echo "ERROR: Failed to build primary DC due to previous error." >&2
+        build_dc
+
+        local ret=$?
+        if [[ "$ret" -ne 0 ]]; then
+            echo "ERROR: Failed to build dc"
             return 1
         fi
 
@@ -82,7 +83,7 @@ run_primary_dc() {
     start_samba
 }
 
-build_primary_dc() {
+build_dc() {
     local ret=0
     local flag_resotre_smb_conf=0
 
@@ -91,10 +92,23 @@ build_primary_dc() {
         return 1
     }
 
-    samba-tool domain provision --use-rfc2307 --domain=${DOMAIN} \
-        --realm=${DOMAIN_FQDN^^} --server-role=dc \
-        --dns-backend=SAMBA_INTERNAL --adminpass=${ADMIN_PASSWORD} --host-ip=${CONTAINER_IP}
-
+    case "$DC_TYPE" in
+        "PRIMARY_DC")
+            samba-tool domain provision --use-rfc2307 --domain=${DOMAIN} \
+                --realm=${DOMAIN_FQDN^^} --server-role=dc \
+                --dns-backend=SAMBA_INTERNAL --adminpass=${ADMIN_PASSWORD} --host-ip=${CONTAINER_IP}
+            ;;
+        "SECONDARY_DC")
+            samba-tool domain join ${DOMAIN_FQDN,,} DC -U"Administrator"%"${ADMIN_PASSWORD}"
+            ;;
+        "RESTORED_DC")
+            # TODO:
+            ;;
+        *)
+            echo "ERROR: Unsupported DC_TYPE environment variable (DC_TYPE=${DC_TYPE}). This program only support \"PRIMARY_DC\", \"SECONDARY_DC\", \"TEMPORARY_DC\" or \"RESTORED_PRIMARY_DC\"" >&2
+            return 1
+            ;;
+    esac
     local ret_samba_tool=$?
 
     post_provisioning || {
