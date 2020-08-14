@@ -1,6 +1,9 @@
 #!/bin/bash
 
-INITIALIZED_FLAG_FILE="/.ad_has_initialized"
+INITIALIZED_FLAG_FILE="/.dc_has_initialized"
+
+# Flag whether need to restore smb.conf after provisioning
+FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=0
 
 main() {
     init_env_variables || {
@@ -99,7 +102,7 @@ build_primary_dc() {
     }
 
     if [[ $ret_samba_tool -ne 0 ]]; then
-        echo "ERROR: Failed to \"samba-tool domain provision\"[ret=${ret_samba_tool}]." >&2
+        echo "ERROR: Failed to \"samba-tool domain provision\"[ret=${ret_samba_tool}]" >&2
         return 1
     fi
 
@@ -120,10 +123,17 @@ pre_provisioning() {
             return 1
         fi
     fi
+
+    # Set the flag to restore smb.conf after provisioning
+    FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=1
+
+    return 0
 }
 
 post_provisioning() {
-    if [[ $flag_restore_smb_conf -eq 1 ]]; then
+    local ret=0
+
+    if [[ $FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV -eq 1 ]]; then
         mv -f /etc/samba/smb.conf.bak /etc/samba/smb.conf
         ret=$?
 
@@ -131,7 +141,7 @@ post_provisioning() {
             echo "ERROR: Failed to restore smb.conf after running \"samba-tool domain provision\"." >&2
             return 1
         fi
-
+        FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=0
     else
         # Change dns forwarder in /etc/samba/smb.conf
         sed -i -e "s/dns forwarder = .*/dns forwarder = ${DNS_FORWARDER}/g" /etc/samba/smb.conf || {
@@ -139,6 +149,8 @@ post_provisioning() {
             return 1
         }
     fi
+
+    return 0
 }
 
 start_samba() {
