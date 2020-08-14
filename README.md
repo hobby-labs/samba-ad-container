@@ -22,7 +22,7 @@ Run a primary DC like below.
 
 ```
 docker run --name pdc01 --hostname pdc01 \
-    -e DC_TYPE="PARIMARY_DC" \
+    -e DC_TYPE="PRIMARY_DC" \
     -e DOMAIN_FQDN="corp.mysite.example.com" \
     --network office_network \
     --privileged \
@@ -37,7 +37,7 @@ This prevent the DNS update error after running Samba.
 ## Environment variables
 | Name of variable | Required | Devault value | Note |
 | ---------------- | -------- | ------------- | ---- |
-| DC_TYPE          | Yes      | -             | This parameter requires "**PARIMARY_DC**" or "**SECONDARY_DC**" or "**RESTORED_DC**". "PARIMARY_DC" will build a Samba as a primary DC. "SECONDARY_DC" will build a Samba as a secondary DC. "RESTORED_DC" will build a Samba that restored from backup-data. "RESTORED_DC" is useful as the temporary DC if you want to restore Samba that has a same host name that had been running previously. |
+| DC_TYPE          | Yes      | -             | This parameter requires "**PRIMARY_DC**" or "**SECONDARY_DC**" or "**RESTORED_DC**". "PRIMARY_DC" will build a Samba as a primary DC. "SECONDARY_DC" will build a Samba as a secondary DC. "RESTORED_DC" will build a Samba that restored from backup-data. "RESTORED_DC" is useful as the temporary DC if you want to restore Samba that has a same host name that had been running previously. |
 | CONTAINER_IP     | No       | Interface IP of the docker | It is recommended to specify container IP if you have multiple IPs except loopback address. This parameter will be used as a listen IP of the Samba daemon. |
 | DOMAIN_FQDN | No | mysite.example.com | Samba domain FQDN. It is not required but recommended to specify it that will be used your own site. |
 | DOMAIN | No | (Upper case of the first element of DOMAIN_FQDN that splitted by ".") | Domain name of your DC. For example, if you do not specify it and you specified DOMAIN_FQDN=corp.mysite.example.com, "CORP" will be used. |
@@ -62,7 +62,7 @@ You can run the container mounting `/etc/samba` and `/var/lib/samba` on the cont
 
 ```
 # docker run --name pdc01 --hostname pdc01 \
-    -e DC_TYPE="PARIMARY_DC" \
+    -e DC_TYPE="PRIMARY_DC" \
     --network office_network \
     --privileged \
     --ip 192.168.1.71 \
@@ -87,7 +87,7 @@ Then you can just run the container with mounting them like below.
 
 ```
 # docker run --name pdc01 --hostname pdc01 \
-    -e DC_TYPE="PARIMARY_DC" \
+    -e DC_TYPE="PRIMARY_DC" \
     --network office_network \
     --privileged \
     --ip 192.168.1.71 \
