@@ -13,10 +13,7 @@ main() {
     }
 
     case "$DC_TYPE" in
-        "PRIMARY_DC")
-            run_dc
-            ;;
-        "SECONDARY_DC")
+        "PRIMARY_DC" | "SECONDARY_DC")
             run_dc
             ;;
         "RESTORED_DC")
