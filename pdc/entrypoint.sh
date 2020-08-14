@@ -5,6 +5,7 @@ INITIALIZED_FLAG_FILE="/.dc_has_initialized"
 # Flag whether need to restore smb.conf after provisioning
 FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=0
 
+
 main() {
     init_env_variables || {
         echo "ERROR: Failed to initialize environment variables." >&2
@@ -113,19 +114,17 @@ pre_provisioning() {
     # /etc/krb5.conf and /etc/samba/smb.conf has already removed at creating docker images.
     # If /etc/samba/smb.conf is existed, it is a file mounted by a user.
     if [[ -f "/etc/samba/smb.conf" ]]; then
-        flag_restore_smb_conf=1
-
         mv -f /etc/samba/smb.conf /etc/samba/smb.conf.bak
-        ret=$?
+        local ret=$?
 
         if [[ $ret -ne 0 ]]; then
             echo "ERROR: Failed to move /etc/samba/smb.conf before running \"samba-tool domain provision\". Provisioning process will be quitted." >&2
             return 1
         fi
-    fi
 
-    # Set the flag to restore smb.conf after provisioning
-    FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=1
+        # Set the flag to restore smb.conf after provisioning
+        FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=1
+    fi
 
     return 0
 }
