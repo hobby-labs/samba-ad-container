@@ -13,12 +13,9 @@ main() {
             run_primary_dc
             ;;
         "SECONDARY_DC")
-            # TODO:
+            run_secondary_dc
             ;;
-        "TEMPORARY_DC")
-            # TODO:
-            ;;
-        "RESTORED_PRIMARY_DC")
+        "RESTORED_DC")
             # TODO:
             ;;
         *)
@@ -79,6 +76,10 @@ run_primary_dc() {
     fi
 
     start_samba
+}
+
+run_secondary_dc() {
+    true
 }
 
 build_primary_dc() {
