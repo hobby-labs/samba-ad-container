@@ -55,6 +55,10 @@ docker run --name pdc01 --hostname pdc01 \
     -d hobbylabs/samba-ad-container
 ```
 
+smb.conf you mounted will be used in the Samba process.
+And do not specify the ro(Read only) option.
+This cause errors during provisioning process.
+
 ## Backup PDC
 You can use samba-tool to backup Samba data.
 
