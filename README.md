@@ -44,6 +44,17 @@ This prevent the DNS update error after running Samba.
 | ADMIN_PASSWORD | No | p@ssword0 | Password of the Administrator. You can change it after running Samba with samba-tool command. |
 | DNS_FORWARDER | No | 8.8.8.8 | DNS forwarder for the Samba. This value will be written as the "dns forwarder" in /etc/samba/smb.conf |
 
+## Use users smb.conf
+Mount /etc/samba directory that contains smb.conf if you want to use smb.conf as user's own.
+
+```
+docker run --name pdc01 --hostname pdc01 \
+   ...
+   --volume /var/data/etc/samba:/etc/samba
+   ...
+    -d hobbylabs/samba-ad-container
+```
+
 ## Backup PDC
 You can use samba-tool to backup Samba data.
 
