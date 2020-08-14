@@ -13,7 +13,7 @@ main() {
     }
 
     case "$DC_TYPE" in
-        "PARIMARY_DC")
+        "PRIMARY_DC")
             run_primary_dc
             ;;
         "SECONDARY_DC")
@@ -23,7 +23,7 @@ main() {
             # TODO:
             ;;
         *)
-            echo "ERROR: Unsupported DC_TYPE environment variable (DC_TYPE=${DC_TYPE}). This program only support \"PARIMARY_DC\", \"SECONDARY_DC\", \"TEMPORARY_DC\" or \"RESTORED_PRIMARY_DC\"" >&2
+            echo "ERROR: Unsupported DC_TYPE environment variable (DC_TYPE=${DC_TYPE}). This program only support \"PRIMARY_DC\", \"SECONDARY_DC\", \"TEMPORARY_DC\" or \"RESTORED_PRIMARY_DC\"" >&2
             return 1
             ;;
     esac
