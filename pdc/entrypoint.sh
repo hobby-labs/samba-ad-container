@@ -237,7 +237,7 @@ post_provisioning() {
 }
 
 start_samba() {
-    if [[ "$RESTORE_WITH" == "JOINING_A_DOMAIN" ]]; then
+    if [[ "$RESTORE_WITH" == "BACKUP_FILE" ]]; then
         exec /usr/sbin/samba -i -s /var/lib/restored_samba/etc/smb.conf
     else
         exec /usr/sbin/samba -i
