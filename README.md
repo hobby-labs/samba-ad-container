@@ -1,6 +1,6 @@
 # samba-ad-container
 
-# Prerequisite
+# Prerequisite of primary/secondary DC
 ## Create macvlan network
 Create macvlan network that your organization's computers in your network to be able to communicate seamlessly with the primary DC container.
 For example, your container's host is in the network `192.168.1.0/24`, you can create a macvlan network like below.
@@ -18,7 +18,7 @@ Containers do not need NAT interface like docker0.
 
 # How to run a primary DC
 ## Run primary DC
-Run a primary DC like below.
+You can run a primary DC like below.
 
 ```
 docker run --name pdc01 --hostname pdc01 \
@@ -112,3 +112,23 @@ Then you can just run the container with mounting them like below.
     -d hobbylabs/samba-ad-container
 ```
 
+# How to run a secondary DC
+## Prerequisite of secondary DC
+Secondary DC requires primary DC.
+Instructions here assumes that primary DC has been running with an IP `192.168.1.71`.
+
+## Run secondary DC
+You can run a secondary DC like below.
+
+```
+docker run --name bdc01 --hostname bdc01 \
+    -e DC_TYPE="SECONDARY_DC" \
+    --network office_network \
+    --privileged \
+    --ip 192.168.1.72 \
+    --dns 192.168.1.71 \
+    -ti hobbylabs/samba-ad-container
+```
+
+Specify the IP of the primary DC to `--dns 192.168.1.71`.
+Otherwise `samba-tool domain join` as secondary DC will be fail.
