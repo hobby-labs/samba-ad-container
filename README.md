@@ -50,7 +50,7 @@ Mount /etc/samba directory that contains smb.conf if you want to use smb.conf as
 ```
 docker run --name pdc01 --hostname pdc01 \
    ...
-   --volume /var/data/etc/samba:/etc/samba
+   --volume /var/data/pdc01/etc/samba:/etc/samba
    ...
     -d hobbylabs/samba-ad-container
 ```
@@ -131,3 +131,14 @@ docker run --name bdc01 --hostname bdc01 \
 ```
 Specify the IP of the primary DC to `--dns 192.168.1.71`.
 Otherwise `samba-tool domain join` as secondary DC will be fail.
+
+## Use users smb.conf
+You can also use your smb.conf similar to the primary DC.
+
+```
+docker run --name bdc01 --hostname bdc01 \
+   ...
+   --volume /var/data/bdc01/etc/samba:/etc/samba
+   ...
+    -d hobbylabs/samba-ad-container
+```
