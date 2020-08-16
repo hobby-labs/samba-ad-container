@@ -142,3 +142,12 @@ docker run --name bdc01 --hostname bdc01 \
    ...
     -d hobbylabs/samba-ad-container
 ```
+
+## Backup
+You can backup secondary DC by copying config files.
+
+```
+docker exec -ti bdc01 cp /etc/samba/smb.conf
+```
+
+Additionally, backup other config files if smb.conf include them.
