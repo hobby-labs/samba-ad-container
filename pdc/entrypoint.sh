@@ -151,6 +151,11 @@ build_dc() {
 build_primary_dc_with_backup_file() {
    local latest_backup_file="$(find /backup -maxdepth 1 -mindepth 1 -type f -regextype posix-extended -regex '.*/samba\-backup\-.*\.tar\.bz2$' | sort -r | head -1)"
    if [[ -z "$latest_backup_file" ]]; then
+       #echo "ERROR: Failed to find backup file in /backup directory." \
+       #     "Are you sure to have mounted the directory /backup that contains backup file?" \
+       #     "Or you mounted it same as an original name of the backup file?" \
+       #     "This program search with it the name samba-backup-*.tar.bz2" >&2
+
        echo "ERROR: Failed to find backup file in /backup directory." \
             "Are you sure to have mounted the directory /backup that contains backup file?" \
             "Or you mounted it same as an original name of the backup file?" \
@@ -159,10 +164,13 @@ build_primary_dc_with_backup_file() {
    fi
 
    samba-tool domain backup restore \
-       --backup-file=${latest_backup_file} \
-       --newservername=$(uname -n) --targetdir=/var/lib/restored_samba
+            --backup-file=${latest_backup_file} \
+            --newservername=$(uname -n) --targetdir=/var/lib/restored_samba || {
+        echo "ERROR: Failed to restore from the local backup file with --backup-file=${latest_backup_file}" >&2
+        return 1
+   }
 
-   return $?
+   return 0
 }
 
 build_primary_dc_with_joining_a_domain() {
