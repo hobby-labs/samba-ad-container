@@ -63,6 +63,18 @@ init_env_variables() {
                  "You can change it by editing /etc/samba/smb.conf after provisioned samba"
     fi
 
+    if [[ ! -z "$RESTORE_WITH" ]]; then
+        if [[ "$RESTORE_WITH" == "JOINING_A_DOMAIN" ]] || [[ "$RESTORE_WITH" == "BACKUP_FILE" ]]; then
+            if [[ "$DC_TYPE" != "PRIMARY_DC" ]]; then
+                echo "ERROR: You can not specify RESTORE_WITH=${RESTORE_WITH} with DC_TYPE=${DC_TYPE}. RESTORE_WITH only support with DC_TYPE=PRIMARY_DC" >&2
+                return 1
+            fi
+        else
+            echo "ERROR: Variable RESTORE_WITH=${RESTORE_WITH} does not support. RESTORE_WITH only supports \"JOIN_DOMAIN\" or \"BACKUP_FILE\"." >&2
+            return 1
+        fi
+    fi
+
     return 0
 }
 
@@ -94,9 +106,21 @@ build_dc() {
 
     case "$DC_TYPE" in
         "PRIMARY_DC")
-            samba-tool domain provision --use-rfc2307 --domain=${DOMAIN} \
-                --realm=${DOMAIN_FQDN^^} --server-role=dc \
-                --dns-backend=SAMBA_INTERNAL --adminpass=${ADMIN_PASSWORD} --host-ip=${CONTAINER_IP}
+
+            case "$RESTORE_WITH" in
+                "BACKUP_FILE" )
+                    run_primary_dc_with_backup_file
+                    ;;
+                "JOIN_DOMAIN" )
+                    run_primary_dc_with_joining_a_domain
+                    ;;
+                * )
+                samba-tool domain provision --use-rfc2307 --domain=${DOMAIN} \
+                    --realm=${DOMAIN_FQDN^^} --server-role=dc \
+                    --dns-backend=SAMBA_INTERNAL --adminpass=${ADMIN_PASSWORD} --host-ip=${CONTAINER_IP}
+                ;;
+            esac
+
             ;;
         "SECONDARY_DC")
             samba-tool domain join ${DOMAIN_FQDN,,} DC -U"Administrator"%"${ADMIN_PASSWORD}"
