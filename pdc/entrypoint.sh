@@ -237,7 +237,11 @@ post_provisioning() {
 }
 
 start_samba() {
-    exec /usr/sbin/samba -i
+    if [[ "$RESTORE_WITH" == "JOINING_A_DOMAIN" ]]; then
+        exec /usr/sbin/samba -i -s /var/lib/restored_samba/smb.conf
+    else
+        exec /usr/sbin/samba -i
+    fi
 }
 
 is_already_initialized() {
