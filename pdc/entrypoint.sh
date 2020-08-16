@@ -188,6 +188,10 @@ build_primary_dc_with_joining_a_domain() {
 }
 
 pre_provisioning() {
+
+    # There no instructions when restore-phase.
+    [[ ! -z "$RESTORE_WITH" ]] && return 0
+
     # /etc/krb5.conf and /etc/samba/smb.conf has already removed at creating docker images.
     # If /etc/samba/smb.conf is existed, it is a file mounted by a user.
     if [[ -f "/etc/samba/smb.conf" ]]; then
@@ -208,6 +212,9 @@ pre_provisioning() {
 
 post_provisioning() {
     local ret=0
+
+    # There no instructions when restore-phase.
+    [[ ! -z "$RESTORE_WITH" ]] && return 0
 
     if [[ $FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV -eq 1 ]]; then
         mv -f /etc/samba/smb.conf.bak /etc/samba/smb.conf
