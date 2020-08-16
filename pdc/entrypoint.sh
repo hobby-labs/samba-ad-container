@@ -109,10 +109,10 @@ build_dc() {
 
             case "$RESTORE_WITH" in
                 "BACKUP_FILE" )
-                    run_primary_dc_with_backup_file
+                    build_primary_dc_with_backup_file
                     ;;
                 "JOIN_DOMAIN" )
-                    run_primary_dc_with_joining_a_domain
+                    build_primary_dc_with_joining_a_domain
                     ;;
                 * )
                 samba-tool domain provision --use-rfc2307 --domain=${DOMAIN} \
@@ -144,6 +144,37 @@ build_dc() {
         echo "ERROR: Failed to \"samba-tool domain provision\"[ret=${ret_samba_tool}]" >&2
         return 1
     fi
+
+    return 0
+}
+
+build_primary_dc_with_backup_file() {
+   local latest_backup_file="$(find /backup -maxdepth 1 -mindepth 1 -type f -regextype posix-extended -regex '.*/samba\-backup\-.*\.tar\.bz2$' | sort -r | head -1)"
+   if [[ -z "$latest_backup_file" ]]; then
+       echo "ERROR: Failed to find backup file in /backup directory." \
+            "Are you sure to have mounted the directory /backup that contains backup file?" \
+            "Or you mounted it same as an original name of the backup file?" \
+            "This program search with it the name samba-backup-*.tar.bz2" >&2
+       return 1
+   fi
+
+   samba-tool domain backup restore \
+       --backup-file=${latest_backup_file} \
+       --newservername=$(uname -n) --targetdir=/var/lib/restored_samba
+
+   return $?
+}
+
+build_primary_dc_with_joining_a_domain() {
+    samba-tool domain join ${DOMAIN_FQDN,,} DC -U Administrator%${ADMIN_PASSWORD} || {
+        echo "ERROR: Failed to join the domain \"${DOMAIN_FQDN,,}\" with samba-tool." >&2
+        return 1
+    }
+
+    samba-tool fsmo transfer --role=all -U Administrator%${ADMIN_PASSWORD} || {
+        echo "ERROR: Failed to transfer fsmo." >&2
+        return 1
+    }
 
     return 0
 }
