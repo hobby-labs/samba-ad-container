@@ -115,7 +115,7 @@ Then you can just run the container with mounting them like below.
 # How to run a secondary DC
 ## Prerequisite of secondary DC
 Secondary DC requires primary DC.
-Instructions here assumes that primary DC has been running with an IP `192.168.1.71`.
+Instructions here assumes that host name of the secondary DC is `bdc01` and it has an IP `192.168.1.72` and its primary DC has been running with an IP `192.168.1.71`.
 
 ## Run secondary DC
 You can run a secondary DC like below.
@@ -129,6 +129,5 @@ docker run --name bdc01 --hostname bdc01 \
     --dns 192.168.1.71 \
     -d hobbylabs/samba-ad-container
 ```
-
 Specify the IP of the primary DC to `--dns 192.168.1.71`.
 Otherwise `samba-tool domain join` as secondary DC will be fail.
