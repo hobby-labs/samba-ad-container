@@ -54,22 +54,6 @@ function teardown() {
     stub_called_with_exactly_times samba-tool 1 "domain" "join" "corp.mysite.example.com" "DC" "-UAdministrator%p@ssword0"
 }
 
-# TODO: Add test cases of RESTORED_DC
-#@test '#build_dc should return 0 if all processes are succeeded with DC_TYPE=RESTORED_DC' {
-#    export DC_TYPE="RESTORED_DC"
-#    run build_dc; command echo "$output"
-#
-#    [[ "$status" -eq 0 ]]
-#    [[ "$(stub_called_times samba-tool)"        -eq 1 ]]
-#    [[ "$(stub_called_times echo)"              -eq 0 ]]
-#    [[ "$(stub_called_times pre_provisioning)"  -eq 1 ]]
-#    [[ "$(stub_called_times post_provisioning)" -eq 1 ]]
-#
-#    stub_called_with_exactly_times samba-tool 1 "domain" "provision" "--use-rfc2307" "--domain=CORP" \
-#                                                "--realm=CORP.MYSITE.EXAMPLE.COM" "--server-role=dc" \
-#                                                "--dns-backend=SAMBA_INTERNAL" "--adminpass=p@ssword0" "--host-ip=172.16.0.2"
-#}
-
 @test '#build_dc should return 1 if pre_provisioning was failed' {
     stub_and_eval pre_provisioning '{ return 1; }'
     run build_dc; command echo "$output"
