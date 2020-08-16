@@ -13,6 +13,8 @@ function setup() {
 
 function teardown() {
     unset DNS_FORWARDER
+    unset RESTORE_WITH
+    unset FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV
 }
 
 @test '#post_provisioning should return 0 if all instructions has succeeded and FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=0' {
@@ -24,6 +26,16 @@ function teardown() {
     [[ "$(stub_called_times echo)"                  -eq 0 ]]
 
     stub_called_with_exactly_times sed 1 "-i" "-e" "s/dns forwarder = .*/dns forwarder = 8.8.8.8/g" /etc/samba/smb.conf
+}
+
+@test '#post_provisioning should return 0 if RESTORE_WITH=JOINING_A_DOMAIN' {
+    RESTORE_WITH=JOINING_A_DOMAIN
+    run post_provisioning; command echo "$output"
+
+    [[ "$status" -eq 0 ]]
+    [[ "$(stub_called_times mv)"                    -eq 0 ]]
+    [[ "$(stub_called_times sed)"                   -eq 0 ]]
+    [[ "$(stub_called_times echo)"                  -eq 0 ]]
 }
 
 @test '#post_provisioning should return 0 if all instructions has succeeded and FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=1' {
