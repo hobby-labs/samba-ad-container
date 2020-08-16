@@ -151,3 +151,15 @@ docker exec -ti bdc01 cp /etc/samba/smb.conf
 ```
 
 Additionally, backup other config files if smb.conf include them.
+
+## Restore
+You can restore secondary DC by running samba-ad-container with smb.conf that backupped previously.
+
+```
+docker run --name bdc01 --hostname bdc01 \
+    -e DC_TYPE="SECONDARY_DC" \
+    ......
+    -v /path/to/backup/smbconf:/etc/samba
+    ......
+    -d hobbylabs/samba-ad-container
+```
