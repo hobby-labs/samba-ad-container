@@ -127,7 +127,7 @@ docker run --name bdc01 --hostname bdc01 \
     --privileged \
     --ip 192.168.1.72 \
     --dns 192.168.1.71 \
-    -ti hobbylabs/samba-ad-container
+    -d hobbylabs/samba-ad-container
 ```
 
 Specify the IP of the primary DC to `--dns 192.168.1.71`.
