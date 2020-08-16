@@ -180,7 +180,7 @@ build_primary_dc_with_joining_a_domain() {
     }
 
     samba-tool fsmo transfer --role=all -U Administrator%${ADMIN_PASSWORD} || {
-        echo "ERROR: Failed to transfer fsmo." >&2
+        echo "ERROR: Failed to transfer fsmo" >&2
         return 1
     }
 
