@@ -25,6 +25,6 @@ function teardown() {
     [[ "$status" -eq 0 ]]
     [[ "$(stub_called_times exec)"                      -eq 1 ]]
 
-    stub_called_with_exactly_times exec 1 "/usr/sbin/samba" "-i" "-s" "/var/lib/restored_samba/smb.conf"
+    stub_called_with_exactly_times exec 1 "/usr/sbin/samba" "-i" "-s" "/var/lib/restored_samba/etc/smb.conf"
 }
 
