@@ -63,6 +63,18 @@ init_env_variables() {
                  "You can change it by editing /etc/samba/smb.conf after provisioned samba"
     fi
 
+    if [[ ! -z "$RESTORE_WITH" ]]; then
+        if [[ "$RESTORE_WITH" == "JOINING_A_DOMAIN" ]] || [[ "$RESTORE_WITH" == "BACKUP_FILE" ]]; then
+            if [[ "$DC_TYPE" != "PRIMARY_DC" ]]; then
+                echo "ERROR: You can not specify RESTORE_WITH=${RESTORE_WITH} with DC_TYPE=${DC_TYPE}. RESTORE_WITH only support with DC_TYPE=PRIMARY_DC" >&2
+                return 1
+            fi
+        else
+            echo "ERROR: Variable RESTORE_WITH=${RESTORE_WITH} does not support. RESTORE_WITH only supports \"JOIN_DOMAIN\" or \"BACKUP_FILE\"." >&2
+            return 1
+        fi
+    fi
+
     return 0
 }
 
@@ -94,9 +106,21 @@ build_dc() {
 
     case "$DC_TYPE" in
         "PRIMARY_DC")
-            samba-tool domain provision --use-rfc2307 --domain=${DOMAIN} \
-                --realm=${DOMAIN_FQDN^^} --server-role=dc \
-                --dns-backend=SAMBA_INTERNAL --adminpass=${ADMIN_PASSWORD} --host-ip=${CONTAINER_IP}
+
+            case "$RESTORE_WITH" in
+                "BACKUP_FILE" )
+                    build_primary_dc_with_backup_file
+                    ;;
+                "JOIN_DOMAIN" )
+                    build_primary_dc_with_joining_a_domain
+                    ;;
+                * )
+                samba-tool domain provision --use-rfc2307 --domain=${DOMAIN} \
+                    --realm=${DOMAIN_FQDN^^} --server-role=dc \
+                    --dns-backend=SAMBA_INTERNAL --adminpass=${ADMIN_PASSWORD} --host-ip=${CONTAINER_IP}
+                ;;
+            esac
+
             ;;
         "SECONDARY_DC")
             samba-tool domain join ${DOMAIN_FQDN,,} DC -U"Administrator"%"${ADMIN_PASSWORD}"
@@ -120,6 +144,45 @@ build_dc() {
         echo "ERROR: Failed to \"samba-tool domain provision\"[ret=${ret_samba_tool}]" >&2
         return 1
     fi
+
+    return 0
+}
+
+build_primary_dc_with_backup_file() {
+   local latest_backup_file="$(find /backup -maxdepth 1 -mindepth 1 -type f -regextype posix-extended -regex '.*/samba\-backup\-.*\.tar\.bz2$' | sort -r | head -1)"
+   if [[ -z "$latest_backup_file" ]]; then
+       #echo "ERROR: Failed to find backup file in /backup directory." \
+       #     "Are you sure to have mounted the directory /backup that contains backup file?" \
+       #     "Or you mounted it same as an original name of the backup file?" \
+       #     "This program search with it the name samba-backup-*.tar.bz2" >&2
+
+       echo "ERROR: Failed to find backup file in /backup directory." \
+            "Are you sure to have mounted the directory /backup that contains backup file?" \
+            "Or you mounted it same as an original name of the backup file?" \
+            "This program search with it the name samba-backup-*.tar.bz2" >&2
+       return 1
+   fi
+
+   samba-tool domain backup restore \
+            --backup-file=${latest_backup_file} \
+            --newservername=$(uname -n) --targetdir=/var/lib/restored_samba || {
+        echo "ERROR: Failed to restore from the local backup file with --backup-file=${latest_backup_file}" >&2
+        return 1
+   }
+
+   return 0
+}
+
+build_primary_dc_with_joining_a_domain() {
+    samba-tool domain join ${DOMAIN_FQDN,,} DC -U Administrator%${ADMIN_PASSWORD} || {
+        echo "ERROR: Failed to join the domain \"${DOMAIN_FQDN,,}\" with samba-tool." >&2
+        return 1
+    }
+
+    samba-tool fsmo transfer --role=all -U Administrator%${ADMIN_PASSWORD} || {
+        echo "ERROR: Failed to transfer fsmo" >&2
+        return 1
+    }
 
     return 0
 }
