@@ -63,14 +63,14 @@ init_env_variables() {
                  "You can change it by editing /etc/samba/smb.conf after provisioned samba"
     fi
 
-    if [[ ! -z "$RESTORE_WITH" ]]; then
-        if [[ "$RESTORE_WITH" == "JOINING_A_DOMAIN" ]] || [[ "$RESTORE_WITH" == "BACKUP_FILE" ]]; then
+    if [[ ! -z "$RESTORE_FROM" ]]; then
+        if [[ "$RESTORE_FROM" == "JOINING_A_DOMAIN" ]] || [[ "$RESTORE_FROM" == "BACKUP_FILE" ]]; then
             if [[ "$DC_TYPE" != "PRIMARY_DC" ]]; then
-                echo "ERROR: You can not specify RESTORE_WITH=${RESTORE_WITH} with DC_TYPE=${DC_TYPE}. RESTORE_WITH only support with DC_TYPE=PRIMARY_DC" >&2
+                echo "ERROR: You can not specify RESTORE_FROM=${RESTORE_FROM} with DC_TYPE=${DC_TYPE}. RESTORE_FROM only support with DC_TYPE=PRIMARY_DC" >&2
                 return 1
             fi
         else
-            echo "ERROR: Variable RESTORE_WITH=${RESTORE_WITH} does not support. RESTORE_WITH only supports \"JOIN_DOMAIN\" or \"BACKUP_FILE\"." >&2
+            echo "ERROR: Variable RESTORE_FROM=${RESTORE_FROM} does not support. RESTORE_FROM only supports \"JOIN_DOMAIN\" or \"BACKUP_FILE\"." >&2
             return 1
         fi
     fi
@@ -107,7 +107,7 @@ build_dc() {
     case "$DC_TYPE" in
         "PRIMARY_DC")
 
-            case "$RESTORE_WITH" in
+            case "$RESTORE_FROM" in
                 "BACKUP_FILE" )
                     build_primary_dc_with_backup_file
                     ;;
@@ -190,7 +190,7 @@ build_primary_dc_with_joining_a_domain() {
 pre_provisioning() {
 
     # There no instructions when restore-phase.
-    [[ ! -z "$RESTORE_WITH" ]] && return 0
+    [[ ! -z "$RESTORE_FROM" ]] && return 0
 
     # /etc/krb5.conf and /etc/samba/smb.conf has already removed at creating docker images.
     # If /etc/samba/smb.conf is existed, it is a file mounted by a user.
@@ -214,7 +214,7 @@ post_provisioning() {
     local ret=0
 
     # There no instructions when restore-phase.
-    [[ ! -z "$RESTORE_WITH" ]] && return 0
+    [[ ! -z "$RESTORE_FROM" ]] && return 0
 
     if [[ $FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV -eq 1 ]]; then
         mv -f /etc/samba/smb.conf.bak /etc/samba/smb.conf
@@ -237,7 +237,7 @@ post_provisioning() {
 }
 
 start_samba() {
-    if [[ "$RESTORE_WITH" == "BACKUP_FILE" ]]; then
+    if [[ "$RESTORE_FROM" == "BACKUP_FILE" ]]; then
         exec /usr/sbin/samba -i -s /var/lib/restored_samba/etc/smb.conf
     else
         exec /usr/sbin/samba -i
