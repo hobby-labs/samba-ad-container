@@ -9,7 +9,7 @@ function setup() {
 
 function teardown() {
     rm -f /etc/krb5.conf /etc/samba/smb.conf
-    unset RESTORE_WITH
+    unset RESTORE_FROM
 }
 
 @test '#pre_provisioning should return 0 if all instructions has succeeded and users smb.conf was NOT existed' {
@@ -20,8 +20,8 @@ function teardown() {
     [[ "$(stub_called_times mv)"                    -eq 0 ]]
 }
 
-@test '#pre_provisioning should return 0 if RESTORE_WITH=JOINING_A_DOMAIN' {
-    RESTORE_WITH="JOINING_A_DOMAIN"
+@test '#pre_provisioning should return 0 if RESTORE_FROM=JOINING_A_DOMAIN' {
+    RESTORE_FROM="JOINING_A_DOMAIN"
     run pre_provisioning; command echo "$output"
 
     [[ "$status" -eq 0 ]]
