@@ -28,7 +28,7 @@ function teardown() {
     unset ADMIN_PASSWORD
     unset CONTAINER_IP
     unset DNS_FORWARDER
-    unset RESTORE_WITH
+    unset RESTORE_FROM
 }
 
 @test '#build_dc should return 0 if all processes are succeeded with DC_TYPE=PRIMARY_DC' {
@@ -47,8 +47,8 @@ function teardown() {
                                                 "--dns-backend=SAMBA_INTERNAL" "--adminpass=p@ssword0" "--host-ip=172.16.0.2"
 }
 
-@test '#build_dc should return 0 if all processes are succeeded with DC_TYPE=PRIMARY_DC and RESTORE_WITH=BACKUP_FILE' {
-    export RESTORE_WITH="BACKUP_FILE"
+@test '#build_dc should return 0 if all processes are succeeded with DC_TYPE=PRIMARY_DC and RESTORE_FROM=BACKUP_FILE' {
+    export RESTORE_FROM="BACKUP_FILE"
     run build_dc; command echo "$output"
 
     [[ "$status" -eq 0 ]]
@@ -60,8 +60,8 @@ function teardown() {
     [[ "$(stub_called_times build_primary_dc_with_joining_a_domain)"    -eq 0 ]]
 }
 
-@test '#build_dc should return 0 if all processes are succeeded with DC_TYPE=PRIMARY_DC and RESTORE_WITH=JOIN_DOMAIN' {
-    export RESTORE_WITH="JOIN_DOMAIN"
+@test '#build_dc should return 0 if all processes are succeeded with DC_TYPE=PRIMARY_DC and RESTORE_FROM=JOIN_DOMAIN' {
+    export RESTORE_FROM="JOIN_DOMAIN"
     run build_dc; command echo "$output"
 
     [[ "$status" -eq 0 ]]
