@@ -18,11 +18,8 @@ main() {
         "PRIMARY_DC" | "SECONDARY_DC")
             run_dc
             ;;
-        "RESTORED_DC")
-            # TODO:
-            ;;
         *)
-            echo "ERROR: Unsupported DC_TYPE environment variable (DC_TYPE=${DC_TYPE}). This program only support \"PRIMARY_DC\", \"SECONDARY_DC\", \"TEMPORARY_DC\" or \"RESTORED_PRIMARY_DC\"" >&2
+            echo "ERROR: Unsupported DC_TYPE environment variable (DC_TYPE=${DC_TYPE}). This program only support \"PRIMARY_DC\" or \"SECONDARY_DC\"" >&2
             return 1
             ;;
     esac
@@ -142,11 +139,8 @@ build_dc() {
         "SECONDARY_DC")
             samba-tool domain join ${DOMAIN_FQDN,,} DC -U"Administrator"%"${ADMIN_PASSWORD}"
             ;;
-        "RESTORED_DC")
-            # TODO:
-            ;;
         *)
-            echo "ERROR: Unsupported DC_TYPE environment variable (DC_TYPE=${DC_TYPE}). This program only support \"PRIMARY_DC\", \"SECONDARY_DC\", \"TEMPORARY_DC\" or \"RESTORED_PRIMARY_DC\"" >&2
+            echo "ERROR: Unsupported DC_TYPE environment variable (DC_TYPE=${DC_TYPE}). This program only support \"PRIMARY_DC\" or \"SECONDARY_DC\"" >&2
             return 1
             ;;
     esac
