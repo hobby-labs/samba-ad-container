@@ -240,7 +240,7 @@ restore_dns() {
 
 join_domain() {
     samba-tool domain join ${DOMAIN_FQDN,,} DC -U"Administrator"%"${ADMIN_PASSWORD}" || {
-        echo "ERROR: Failed to join the domain \"${DOMAIN_FQDN,,}\" with samba-tool." >&2
+        echo "ERROR: Failed to join the domain \"${DOMAIN_FQDN,,}\" with samba-tool" >&2
         return 1
     }
 
