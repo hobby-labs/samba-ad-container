@@ -62,6 +62,7 @@ function teardown() {
 
 @test '#build_dc should return 0 if all processes are succeeded with DC_TYPE=PRIMARY_DC and RESTORE_FROM=JOINING_DOMAIN' {
     export RESTORE_FROM="JOINING_DOMAIN"
+    stub_and_eval host '{ command echo "rpdc has address 192.168.1.73"; }'
     run build_dc; command echo "$output"
 
     [[ "$status" -eq 0 ]]
@@ -71,6 +72,43 @@ function teardown() {
     [[ "$(stub_called_times post_provisioning)"                         -eq 1 ]]
     [[ "$(stub_called_times build_primary_dc_with_backup_file)"         -eq 0 ]]
     [[ "$(stub_called_times build_primary_dc_with_joining_domain)"      -eq 1 ]]
+    [[ "$(stub_called_times host)"                                      -eq 1 ]]
+    stub_called_with_exactly_times build_primary_dc_with_joining_domain 1 "192.168.1.73"
+}
+
+@test '#build_dc should return 1 if all processes are succeeded with DC_TYPE=PRIMARY_DC and RESTORE_FROM=JOINING_DOMAIN but failed to get IP of rpdc' {
+    export RESTORE_FROM="JOINING_DOMAIN"
+    stub_and_eval host '{ command echo "rpdc has address 256.256.256.256"; }'
+    run build_dc; command echo "$output"
+
+    [[ "$status" -eq 1 ]]
+    [[ "$(stub_called_times samba-tool)"                                -eq 0 ]]
+    [[ "$(stub_called_times echo)"                                      -eq 1 ]]
+    [[ "$(stub_called_times pre_provisioning)"                          -eq 1 ]]
+    [[ "$(stub_called_times post_provisioning)"                         -eq 0 ]]
+    [[ "$(stub_called_times build_primary_dc_with_backup_file)"         -eq 0 ]]
+    [[ "$(stub_called_times build_primary_dc_with_joining_domain)"      -eq 0 ]]
+    [[ "$(stub_called_times host)"                                      -eq 1 ]]
+
+    stub_called_with_exactly_times echo 1 "ERROR: Could not get IP from the host name \"rpdc\". [result=256.256.256.256]"
+}
+
+@test '#build_dc should return 0 if all processes are succeeded with DC_TYPE=PRIMARY_DC and RESTORE_FROM=192.168.1.73' {
+    export RESTORE_FROM="JOINING_DOMAIN"
+
+    stub_and_eval host '{ command echo "rpdc has address 256.256.256.256"; }'
+    run build_dc; command echo "$output"
+
+    [[ "$status" -eq 1 ]]
+    [[ "$(stub_called_times samba-tool)"                                -eq 0 ]]
+    [[ "$(stub_called_times echo)"                                      -eq 1 ]]
+    [[ "$(stub_called_times pre_provisioning)"                          -eq 1 ]]
+    [[ "$(stub_called_times post_provisioning)"                         -eq 0 ]]
+    [[ "$(stub_called_times build_primary_dc_with_backup_file)"         -eq 0 ]]
+    [[ "$(stub_called_times build_primary_dc_with_joining_domain)"      -eq 0 ]]
+    [[ "$(stub_called_times host)"                                      -eq 1 ]]
+
+    stub_called_with_exactly_times echo 1 "ERROR: Could not get IP from the host name \"rpdc\". [result=256.256.256.256]"
 }
 
 @test '#build_dc should return 0 if all processes are succeeded with DC_TYPE=SECONDARY_DC' {

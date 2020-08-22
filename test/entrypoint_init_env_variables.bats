@@ -48,6 +48,28 @@ function teardown() {
     [[ "$(stub_called_times get_container_ip)" -eq 1 ]]
 }
 
+@test '#init_env_variables return 0 if DC_TYPE=PRIMARY_DC and RESTORE_FROM=BACKUP_FILE' {
+    stub_and_eval get_container_ip '{ command echo "172.16.0.2"; }'
+    DC_TYPE="PRIMARY_DC"
+    RESTORE_FROM="BACKUP_FILE"
+
+    run init_env_variables; command echo "$output"
+    [[ "$status" -eq 0 ]]
+    [[ "$(stub_called_times echo)"             -eq 4 ]]
+    [[ "$(stub_called_times get_container_ip)" -eq 1 ]]
+}
+
+@test '#init_env_variables return 0 if DC_TYPE=PRIMARY_DC and RESTORE_FROM=<IP>' {
+    stub_and_eval get_container_ip '{ command echo "172.16.0.2"; }'
+    DC_TYPE="PRIMARY_DC"
+    RESTORE_FROM="192.168.1.73"
+
+    run init_env_variables; command echo "$output"
+    [[ "$status" -eq 0 ]]
+    [[ "$(stub_called_times echo)"             -eq 4 ]]
+    [[ "$(stub_called_times get_container_ip)" -eq 1 ]]
+}
+
 @test '#init_env_variables return 0 if DC_TYPE=PRIMARY_DC and RESTORE_FROM=FOO (Unsupported restore method)' {
     stub_and_eval get_container_ip '{ command echo "172.16.0.2"; }'
     DC_TYPE="PRIMARY_DC"

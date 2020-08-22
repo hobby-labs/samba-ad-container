@@ -5,6 +5,8 @@ INITIALIZED_FLAG_FILE="/.dc_has_initialized"
 # Flag whether need to restore smb.conf after provisioning
 FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=0
 
+# Regex of the IP from here https://stackoverflow.com/a/13778973/4307818
+REG_IP='^(0*(1?[0-9]{1,2}|2([0-4][0-9]|5[0-5]))\.){3}0*(1?[0-9]{1,2}|2([0-4][0-9]|5[0-5]))$'
 
 main() {
     init_env_variables || {
@@ -63,8 +65,11 @@ init_env_variables() {
                  "You can change it by editing /etc/samba/smb.conf after provisioned samba"
     fi
 
+
+
     if [[ ! -z "$RESTORE_FROM" ]]; then
-        if [[ "$RESTORE_FROM" == "JOINING_DOMAIN" ]] || [[ "$RESTORE_FROM" == "BACKUP_FILE" ]]; then
+        if [[ "$RESTORE_FROM" == "JOINING_DOMAIN" ]] || [[ "$RESTORE_FROM" == "BACKUP_FILE" ]] || [[ "$RESTORE_FROM" =~ $REG_IP ]]; then
+            # RESTORE_FROM allows "JOINING_DOMAIN", "BACKUP_FILE" or IP
             if [[ "$DC_TYPE" != "PRIMARY_DC" ]]; then
                 echo "ERROR: You can not specify RESTORE_FROM=${RESTORE_FROM} with DC_TYPE=${DC_TYPE}. RESTORE_FROM only support with DC_TYPE=PRIMARY_DC" >&2
                 return 1
@@ -112,13 +117,25 @@ build_dc() {
                     build_primary_dc_with_backup_file
                     ;;
                 "JOINING_DOMAIN" )
-                    build_primary_dc_with_joining_domain
+                    local dns_ip=$(host rpdc | rev | cut -d' ' -f1 | rev)
+                    if [[ ! "$dns_ip" =~ $REG_IP ]]; then
+                        echo "ERROR: Could not get IP from the host name \"rpdc\". [result=${dns_ip}]" >&2
+                        return 1
+                    fi
+
+                    build_primary_dc_with_joining_domain $dns_ip
+                    ;;
+                "" )
+                    # Run a primary DC from scratch. 
+                    samba-tool domain provision --use-rfc2307 --domain=${DOMAIN} \
+                        --realm=${DOMAIN_FQDN^^} --server-role=dc \
+                        --dns-backend=SAMBA_INTERNAL --adminpass=${ADMIN_PASSWORD} --host-ip=${CONTAINER_IP}
+
                     ;;
                 * )
-                samba-tool domain provision --use-rfc2307 --domain=${DOMAIN} \
-                    --realm=${DOMAIN_FQDN^^} --server-role=dc \
-                    --dns-backend=SAMBA_INTERNAL --adminpass=${ADMIN_PASSWORD} --host-ip=${CONTAINER_IP}
-                ;;
+                    # RESTORE_FROM assumed to be IP. It is promised by init_env_variables()
+                    build_primary_dc_with_joining_domain $RESTORE_FROM
+                    ;;
             esac
 
             ;;
@@ -174,13 +191,56 @@ build_primary_dc_with_backup_file() {
 }
 
 build_primary_dc_with_joining_domain() {
-    samba-tool domain join ${DOMAIN_FQDN,,} DC -U Administrator%${ADMIN_PASSWORD} || {
-        echo "ERROR: Failed to join the domain \"${DOMAIN_FQDN,,}\" with samba-tool." >&2
+    local dns_ip="$1"
+
+    change_ip_of_dns "$dns_ip" || return 1
+    join_domain || return 1
+
+    # Move roles to this host
+    samba-tool fsmo transfer --role=all -U Administrator%${ADMIN_PASSWORD} || {
+        echo "ERROR: Failed to transfer fsmo from DC $dns_ip" >&2
         return 1
     }
 
-    samba-tool fsmo transfer --role=all -U Administrator%${ADMIN_PASSWORD} || {
-        echo "ERROR: Failed to transfer fsmo" >&2
+    restore_dns || return 1
+
+    return 0
+}
+
+change_ip_of_dns() {
+    local dns_ip="$1"
+
+    cp -f /etc/resolv.conf /etc/resolv.conf.org || {
+        echo "ERROR: Failed to backup /etc/resolv.conf to /etc/resolv.conf.org" >&2
+        return 1
+    }
+
+    echo "nameserver $dns_ip" > /etc/resolv.conf || {
+        echo "ERROR: Failed to overwrite /etc/resolv.conf by \"nameserver $dns_ip\"" >&2
+        return 1
+    }
+    sync
+
+    return 0
+}
+
+restore_dns() {
+    if [[ ! -f "/etc/resolv.conf.org" ]]; then
+        echo "INFO: Backup file /etc/resolv.conf.org does not exist. Restoring process will be skipped"
+        return 0
+    fi
+
+    cp -f /etc/resolv.conf.org /etc/resolv.conf || {
+        echo "ERROR: Failed to restore resolv.conf. Copying file /etc/resolv.conf.org to /etc/resolv.conf has failed" >&2
+        return 1
+    }
+
+    return 0
+}
+
+join_domain() {
+    samba-tool domain join ${DOMAIN_FQDN,,} DC -U"Administrator"%"${ADMIN_PASSWORD}" || {
+        echo "ERROR: Failed to join the domain \"${DOMAIN_FQDN,,}\" with samba-tool" >&2
         return 1
     }
 
