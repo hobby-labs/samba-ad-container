@@ -64,13 +64,13 @@ init_env_variables() {
     fi
 
     if [[ ! -z "$RESTORE_FROM" ]]; then
-        if [[ "$RESTORE_FROM" == "JOINING_A_DOMAIN" ]] || [[ "$RESTORE_FROM" == "BACKUP_FILE" ]]; then
+        if [[ "$RESTORE_FROM" == "JOINING_DOMAIN" ]] || [[ "$RESTORE_FROM" == "BACKUP_FILE" ]]; then
             if [[ "$DC_TYPE" != "PRIMARY_DC" ]]; then
                 echo "ERROR: You can not specify RESTORE_FROM=${RESTORE_FROM} with DC_TYPE=${DC_TYPE}. RESTORE_FROM only support with DC_TYPE=PRIMARY_DC" >&2
                 return 1
             fi
         else
-            echo "ERROR: Variable RESTORE_FROM=${RESTORE_FROM} does not support. RESTORE_FROM only supports \"JOIN_DOMAIN\" or \"BACKUP_FILE\"." >&2
+            echo "ERROR: Variable RESTORE_FROM=${RESTORE_FROM} does not support. RESTORE_FROM only supports \"JOINING_DOMAIN\" or \"BACKUP_FILE\"." >&2
             return 1
         fi
     fi
@@ -111,8 +111,8 @@ build_dc() {
                 "BACKUP_FILE" )
                     build_primary_dc_with_backup_file
                     ;;
-                "JOIN_DOMAIN" )
-                    build_primary_dc_with_joining_a_domain
+                "JOINING_DOMAIN" )
+                    build_primary_dc_with_joining_domain
                     ;;
                 * )
                 samba-tool domain provision --use-rfc2307 --domain=${DOMAIN} \
@@ -173,7 +173,7 @@ build_primary_dc_with_backup_file() {
    return 0
 }
 
-build_primary_dc_with_joining_a_domain() {
+build_primary_dc_with_joining_domain() {
     samba-tool domain join ${DOMAIN_FQDN,,} DC -U Administrator%${ADMIN_PASSWORD} || {
         echo "ERROR: Failed to join the domain \"${DOMAIN_FQDN,,}\" with samba-tool." >&2
         return 1
