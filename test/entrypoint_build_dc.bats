@@ -18,7 +18,7 @@ function setup() {
     stub post_provisioning
 
     stub build_primary_dc_with_backup_file
-    stub build_primary_dc_with_joining_a_domain
+    stub build_primary_dc_with_joining_domain
 }
 
 function teardown() {
@@ -40,7 +40,7 @@ function teardown() {
     [[ "$(stub_called_times pre_provisioning)"                          -eq 1 ]]
     [[ "$(stub_called_times post_provisioning)"                         -eq 1 ]]
     [[ "$(stub_called_times build_primary_dc_with_backup_file)"         -eq 0 ]]
-    [[ "$(stub_called_times build_primary_dc_with_joining_a_domain)"    -eq 0 ]]
+    [[ "$(stub_called_times build_primary_dc_with_joining_domain)"      -eq 0 ]]
 
     stub_called_with_exactly_times samba-tool 1 "domain" "provision" "--use-rfc2307" "--domain=CORP" \
                                                 "--realm=CORP.MYSITE.EXAMPLE.COM" "--server-role=dc" \
@@ -57,11 +57,11 @@ function teardown() {
     [[ "$(stub_called_times pre_provisioning)"                          -eq 1 ]]
     [[ "$(stub_called_times post_provisioning)"                         -eq 1 ]]
     [[ "$(stub_called_times build_primary_dc_with_backup_file)"         -eq 1 ]]
-    [[ "$(stub_called_times build_primary_dc_with_joining_a_domain)"    -eq 0 ]]
+    [[ "$(stub_called_times build_primary_dc_with_joining_domain)"      -eq 0 ]]
 }
 
-@test '#build_dc should return 0 if all processes are succeeded with DC_TYPE=PRIMARY_DC and RESTORE_FROM=JOIN_DOMAIN' {
-    export RESTORE_FROM="JOIN_DOMAIN"
+@test '#build_dc should return 0 if all processes are succeeded with DC_TYPE=PRIMARY_DC and RESTORE_FROM=JOINING_DOMAIN' {
+    export RESTORE_FROM="JOINING_DOMAIN"
     run build_dc; command echo "$output"
 
     [[ "$status" -eq 0 ]]
@@ -70,7 +70,7 @@ function teardown() {
     [[ "$(stub_called_times pre_provisioning)"                          -eq 1 ]]
     [[ "$(stub_called_times post_provisioning)"                         -eq 1 ]]
     [[ "$(stub_called_times build_primary_dc_with_backup_file)"         -eq 0 ]]
-    [[ "$(stub_called_times build_primary_dc_with_joining_a_domain)"    -eq 1 ]]
+    [[ "$(stub_called_times build_primary_dc_with_joining_domain)"      -eq 1 ]]
 }
 
 @test '#build_dc should return 0 if all processes are succeeded with DC_TYPE=SECONDARY_DC' {
@@ -83,7 +83,7 @@ function teardown() {
     [[ "$(stub_called_times pre_provisioning)"                          -eq 1 ]]
     [[ "$(stub_called_times post_provisioning)"                         -eq 1 ]]
     [[ "$(stub_called_times build_primary_dc_with_backup_file)"         -eq 0 ]]
-    [[ "$(stub_called_times build_primary_dc_with_joining_a_domain)"    -eq 0 ]]
+    [[ "$(stub_called_times build_primary_dc_with_joining_domain)"      -eq 0 ]]
 
     stub_called_with_exactly_times samba-tool 1 "domain" "join" "corp.mysite.example.com" "DC" "-UAdministrator%p@ssword0"
 }
@@ -98,7 +98,7 @@ function teardown() {
     [[ "$(stub_called_times pre_provisioning)"                          -eq 1 ]]
     [[ "$(stub_called_times post_provisioning)"                         -eq 0 ]]
     [[ "$(stub_called_times build_primary_dc_with_backup_file)"         -eq 0 ]]
-    [[ "$(stub_called_times build_primary_dc_with_joining_a_domain)"    -eq 0 ]]
+    [[ "$(stub_called_times build_primary_dc_with_joining_domain)"      -eq 0 ]]
 
     stub_called_with_exactly_times echo 1 "ERROR: Failed to pre_provisioning tasks"
 }
@@ -114,7 +114,7 @@ function teardown() {
     [[ "$(stub_called_times pre_provisioning)"                          -eq 1 ]]
     [[ "$(stub_called_times post_provisioning)"                         -eq 1 ]]
     [[ "$(stub_called_times build_primary_dc_with_backup_file)"         -eq 0 ]]
-    [[ "$(stub_called_times build_primary_dc_with_joining_a_domain)"    -eq 0 ]]
+    [[ "$(stub_called_times build_primary_dc_with_joining_domain)"      -eq 0 ]]
 
     stub_called_with_exactly_times echo 1 "ERROR: Failed to \"samba-tool domain provision\"[ret=1]"
 }
@@ -129,7 +129,7 @@ function teardown() {
     [[ "$(stub_called_times pre_provisioning)"                          -eq 1 ]]
     [[ "$(stub_called_times post_provisioning)"                         -eq 1 ]]
     [[ "$(stub_called_times build_primary_dc_with_backup_file)"         -eq 0 ]]
-    [[ "$(stub_called_times build_primary_dc_with_joining_a_domain)"    -eq 0 ]]
+    [[ "$(stub_called_times build_primary_dc_with_joining_domain)"      -eq 0 ]]
 
     stub_called_with_exactly_times echo 1 "ERROR: Failed to post_provisioning tasks"
 }
