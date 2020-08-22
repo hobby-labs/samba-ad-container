@@ -37,10 +37,10 @@ function teardown() {
     stub_called_with_exactly_times echo 1 "ERROR: Attempting get IP from the container because the environment variable CONTAINER_IP was empty but failed."
 }
 
-@test '#init_env_variables return 0 if DC_TYPE=PRIMARY_DC and RESTORE_WITH=JOINING_A_DOMAIN' {
+@test '#init_env_variables return 0 if DC_TYPE=PRIMARY_DC and RESTORE_FROM=JOINING_A_DOMAIN' {
     stub_and_eval get_container_ip '{ command echo "172.16.0.2"; }'
     DC_TYPE="PRIMARY_DC"
-    RESTORE_WITH="JOINING_A_DOMAIN"
+    RESTORE_FROM="JOINING_A_DOMAIN"
 
     run init_env_variables; command echo "$output"
     [[ "$status" -eq 0 ]]
@@ -48,28 +48,28 @@ function teardown() {
     [[ "$(stub_called_times get_container_ip)" -eq 1 ]]
 }
 
-@test '#init_env_variables return 0 if DC_TYPE=PRIMARY_DC and RESTORE_WITH=FOO (Unsupported restore method)' {
+@test '#init_env_variables return 0 if DC_TYPE=PRIMARY_DC and RESTORE_FROM=FOO (Unsupported restore method)' {
     stub_and_eval get_container_ip '{ command echo "172.16.0.2"; }'
     DC_TYPE="PRIMARY_DC"
-    RESTORE_WITH="FOO"
+    RESTORE_FROM="FOO"
 
     run init_env_variables; command echo "$output"
     [[ "$status" -eq 1 ]]
     [[ "$(stub_called_times echo)"             -eq 5 ]]
     [[ "$(stub_called_times get_container_ip)" -eq 1 ]]
-    stub_called_with_exactly_times echo 1 "ERROR: Variable RESTORE_WITH=FOO does not support. RESTORE_WITH only supports \"JOIN_DOMAIN\" or \"BACKUP_FILE\"."
+    stub_called_with_exactly_times echo 1 "ERROR: Variable RESTORE_FROM=FOO does not support. RESTORE_FROM only supports \"JOIN_DOMAIN\" or \"BACKUP_FILE\"."
 }
 
-@test '#init_env_variables return 0 if DC_TYPE=SECONDARY_DC and RESTORE_WITH=JOINING_A_DOMAIN (Unsupported with SECONDARY_DC)' {
+@test '#init_env_variables return 0 if DC_TYPE=SECONDARY_DC and RESTORE_FROM=JOINING_A_DOMAIN (Unsupported with SECONDARY_DC)' {
     stub_and_eval get_container_ip '{ command echo "172.16.0.2"; }'
     DC_TYPE="SECONDARY_DC"
-    RESTORE_WITH="JOINING_A_DOMAIN"
+    RESTORE_FROM="JOINING_A_DOMAIN"
 
     run init_env_variables; command echo "$output"
     [[ "$status" -eq 1 ]]
     [[ "$(stub_called_times echo)"             -eq 5 ]]
     [[ "$(stub_called_times get_container_ip)" -eq 1 ]]
-    stub_called_with_exactly_times echo 1 "ERROR: You can not specify RESTORE_WITH=JOINING_A_DOMAIN with DC_TYPE=SECONDARY_DC. RESTORE_WITH only support with DC_TYPE=PRIMARY_DC"
+    stub_called_with_exactly_times echo 1 "ERROR: You can not specify RESTORE_FROM=JOINING_A_DOMAIN with DC_TYPE=SECONDARY_DC. RESTORE_FROM only support with DC_TYPE=PRIMARY_DC"
 }
 
 @test '#init_env_variables return 0 if all environment variables were already set' {
@@ -79,7 +79,7 @@ function teardown() {
     DOMAIN="CORP"
     ADMIN_PASSWORD="p@ssword0"
     DNS_FORWARDER="192.168.1.1"
-    RESTORE_WITH="JOINING_A_DOMAIN"
+    RESTORE_FROM="JOINING_A_DOMAIN"
 
     run init_env_variables
 
