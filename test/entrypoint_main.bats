@@ -29,7 +29,7 @@ function teardown() {
     command echo "$output"
     [[ "$status" -eq 1 ]]
     [[ "$(stub_called_times run_primary_dc)" -eq 0 ]]
-    stub_called_with_exactly_times echo 1 "ERROR: Unsupported DC_TYPE environment variable (DC_TYPE=FOO). This program only support \"PRIMARY_DC\", \"SECONDARY_DC\", \"TEMPORARY_DC\" or \"RESTORED_PRIMARY_DC\""
+    stub_called_with_exactly_times echo 1 "ERROR: Unsupported DC_TYPE environment variable (DC_TYPE=FOO). This program only support \"PRIMARY_DC\" or \"SECONDARY_DC\""
 }
 
 @test '#main should return 0 if DC_TYPE=PRIMARY_DC and run_primary_dc has return 0' {
