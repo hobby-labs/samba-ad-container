@@ -225,7 +225,7 @@ change_ip_of_dns() {
 }
 
 restore_dns() {
-    if [[ -f "/etc/resolv.conf.org" ]]; then
+    if [[ ! -f "/etc/resolv.conf.org" ]]; then
         echo "INFO: Backup file /etc/resolv.conf.org does not exist. Restoring process will be skipped"
         return 0
     fi
