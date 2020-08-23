@@ -253,7 +253,7 @@ pre_provisioning() {
         local ret=$?
 
         if [[ $ret -ne 0 ]]; then
-            echo "ERROR: Failed to move /etc/samba/smb.conf before running \"samba-tool domain provision\". Provisioning process will be quitted." >&2
+            echo "ERROR: Failed to move /etc/samba/smb.conf before running \"samba-tool domain provision\". Provisioning process will be quitted" >&2
             return 1
         fi
 
