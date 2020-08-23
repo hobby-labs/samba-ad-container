@@ -253,13 +253,29 @@ pre_provisioning() {
         local ret=$?
 
         if [[ $ret -ne 0 ]]; then
-            echo "ERROR: Failed to move /etc/samba/smb.conf before running \"samba-tool domain provision\". Provisioning process will be quitted." >&2
+            echo "ERROR: Failed to move /etc/samba/smb.conf before running \"samba-tool domain provision\". Provisioning process will be quitted" >&2
             return 1
         fi
 
         # Set the flag to restore smb.conf after provisioning
         FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=1
     fi
+
+    # Edit /etc/hosts
+    prepare_hosts || return 1
+
+    return 0
+}
+
+prepare_hosts() {
+    local reg_container_ip=$(sed -e 's/\./\\./g' <<< "$CONTAINER_IP")
+
+    sed -i -e "s/${reg_container_ip} /${CONTAINER_IP} $(hostname) $(hostname).${DOMAIN_FQDN,,}/g" /etc/hosts
+
+    grep -q -E "^${reg_container_ip} .*" || {
+        echo "ERROR: Failed to edit /etc/hosts. Could not add hosts information of $(hostname) $(hostname).${DOMAIN_FQDN,,}" >&2
+        return 1
+    }
 
     return 0
 }

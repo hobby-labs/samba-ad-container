@@ -5,6 +5,8 @@ function setup() {
     mkdir -p /etc/samba/
     touch /etc/krb5.conf /etc/samba/smb.conf
     stub mv
+    stub echo
+    stub prepare_hosts
 }
 
 function teardown() {
@@ -18,6 +20,8 @@ function teardown() {
 
     [[ "$status" -eq 0 ]]
     [[ "$(stub_called_times mv)"                    -eq 0 ]]
+    [[ "$(stub_called_times prepare_hosts)"         -eq 1 ]]
+    [[ "$(stub_called_times echo)"                  -eq 0 ]]
 }
 
 @test '#pre_provisioning should return 0 if RESTORE_FROM=JOINING_A_DOMAIN' {
@@ -26,24 +30,40 @@ function teardown() {
 
     [[ "$status" -eq 0 ]]
     [[ "$(stub_called_times mv)"                    -eq 0 ]]
+    [[ "$(stub_called_times prepare_hosts)"         -eq 0 ]]
+    [[ "$(stub_called_times echo)"                  -eq 0 ]]
 }
 
-@test '#pre_provisioning should return 0 if all instructions has succeeded and users smb.conf was existed' {
+@test '#pre_provisioning should return 0 if all instructions has succeeded and /etc/smb.conf that prepared by user was existed' {
     run pre_provisioning; command echo "$output"
 
     [[ "$status" -eq 0 ]]
     [[ "$(stub_called_times mv)"                    -eq 1 ]]
+    [[ "$(stub_called_times prepare_hosts)"         -eq 1 ]]
+    [[ "$(stub_called_times echo)"                  -eq 0 ]]
     stub_called_with_exactly_times mv 1 "-f" "/etc/samba/smb.conf" "/etc/samba/smb.conf.bak"
 }
 
-
-
-
-@test '#pre_provisioning should return 1 if mv was failed and smb.conf of user was existed' {
+@test '#pre_provisioning should return 1 if mv has failed' {
+    stub_and_eval mv '{ return 1; }'
     run pre_provisioning; command echo "$output"
 
-    [[ "$status" -eq 0 ]]
+    [[ "$status" -eq 1 ]]
     [[ "$(stub_called_times mv)"                    -eq 1 ]]
+    [[ "$(stub_called_times prepare_hosts)"         -eq 0 ]]
+    [[ "$(stub_called_times echo)"                  -eq 1 ]]
 
+    stub_called_with_exactly_times mv 1 "-f" "/etc/samba/smb.conf" "/etc/samba/smb.conf.bak"
+    stub_called_with_exactly_times echo 1 "ERROR: Failed to move /etc/samba/smb.conf before running \"samba-tool domain provision\". Provisioning process will be quitted"
+}
+
+@test '#pre_provisioning should return 1 if prepare_hosts has failed' {
+    stub_and_eval prepare_hosts '{ return 1; }'
+    run pre_provisioning; command echo "$output"
+
+    [[ "$status" -eq 1 ]]
+    [[ "$(stub_called_times mv)"                    -eq 1 ]]
+    [[ "$(stub_called_times prepare_hosts)"         -eq 1 ]]
+    [[ "$(stub_called_times echo)"                  -eq 0 ]]
 }
 
