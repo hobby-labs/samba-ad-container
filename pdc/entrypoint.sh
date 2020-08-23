@@ -270,10 +270,10 @@ pre_provisioning() {
 prepare_hosts() {
     local reg_container_ip=$(sed -e 's/\./\\./g' <<< "$CONTAINER_IP")
 
-    sed -i -e "s/${reg_container_ip} /${CONTAINER_IP} $(hostname) $(hostname).${DOMAIN_FQDN,,}/g" /etc/hosts
+    sed -i -e "s/${reg_container_ip} .*/${CONTAINER_IP} ${HOSTNAME} ${HOSTNAME}.${DOMAIN_FQDN,,}/g" /etc/hosts
 
-    grep -q -E "^${reg_container_ip} .*" || {
-        echo "ERROR: Failed to edit /etc/hosts. Could not add hosts information of $(hostname) $(hostname).${DOMAIN_FQDN,,}" >&2
+    grep -q -E "^${reg_container_ip} .*" /etc/hosts || {
+        echo "ERROR: Failed to edit /etc/hosts. Could not add hosts information of ${HOSTNAME} ${HOSTNAME}.${DOMAIN_FQDN,,}" >&2
         return 1
     }
 
