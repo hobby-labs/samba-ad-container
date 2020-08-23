@@ -267,7 +267,9 @@ pre_provisioning() {
 post_provisioning() {
     local ret=0
 
-    # There no instructions when restore-phase.
+    set_winbind_to_nsswitch || return 1
+
+    # There no other instructions when restore-phase.
     [[ ! -z "$RESTORE_FROM" ]] && return 0
 
     if [[ $FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV -eq 1 ]]; then
@@ -286,6 +288,28 @@ post_provisioning() {
             return 1
         }
     fi
+
+    return 0
+}
+
+set_winbind_to_nsswitch() {
+    grep -q -E '^passwd:.* winbind( .*)?$' /etc/nsswitch.conf || {
+        sed -i -e 's/^passwd:\(.*\)/passwd:\1 winbind/' /etc/nsswitch.conf
+
+        grep -q -E '^passwd:.* winbind( .*)?$' /etc/nsswitch.conf || {
+            echo "ERROR: Failed to add winbind at line of passwd in /etc/nsswitch.conf" >&2
+            return 1
+        }
+    }
+
+    grep -q -E '^group:.* winbind( .*)?$' /etc/nsswitch.conf || {
+        sed -i -e 's/^group:\(.*\)/group:\1 winbind/' /etc/nsswitch.conf
+
+        grep -q -E '^group:.* winbind( .*)?$' /etc/nsswitch.conf || {
+            echo "ERROR: Failed to add winbind at line of group in /etc/nsswitch.conf" >&2
+            return 1
+        }
+    }
 
     return 0
 }
