@@ -287,6 +287,23 @@ post_provisioning() {
         }
     fi
 
+    set_winbind_to_nsswitch || return 1
+
+    return 0
+}
+
+set_winbind_to_nsswitch() {
+    sed -i -e 's/^passwd:\(.*\)/passwd:\1 winbind/' /etc/nsswitch.conf
+    grep -q -E '^passwd:.* winbind( .*)?$' /etc/nsswitch.conf || {
+        echo "ERROR: Failed to add winbind at line of passwd in /etc/nsswitch.conf" >&2
+        return 1
+    }
+
+    sed -i -e 's/^group:\(.*\)/group:\1 winbind/' /etc/nsswitch.conf || {
+        echo "ERROR: Failed to add winbind at line of group in /etc/nsswitch.conf" >&2
+        return 1
+    }
+
     return 0
 }
 
