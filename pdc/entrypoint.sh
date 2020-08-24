@@ -62,8 +62,6 @@ init_env_variables() {
                  "You can change it by editing /etc/samba/smb.conf after provisioned samba"
     fi
 
-
-
     if [[ ! -z "$RESTORE_FROM" ]]; then
         if [[ "$RESTORE_FROM" == "JOINING_DOMAIN" ]] || [[ "$RESTORE_FROM" == "BACKUP_FILE" ]] || [[ "$RESTORE_FROM" =~ $REG_IP ]]; then
             # RESTORE_FROM allows "JOINING_DOMAIN", "BACKUP_FILE" or IP
@@ -243,6 +241,11 @@ join_domain() {
 
 pre_provisioning() {
 
+    if [[ "${DC_TYPE}" == "SECONDARY_DC" ]] || \
+            ( [[ "${DC_TYPE}" == "PRIMARY_DC" ]] && ( [[ "$RESTORE_FROM" == "JOINING_DOMAIN" ]] || [[ "$RESTORE_FROM" =~ $REG_IP ]] ) ); then
+        prepare_krb5_conf || return 1
+    fi
+
     # There no instructions when restore-phase.
     [[ ! -z "$RESTORE_FROM" ]] && return 0
 
@@ -263,6 +266,18 @@ pre_provisioning() {
 
     # Edit /etc/hosts
     prepare_hosts || return 1
+
+    return 0
+}
+
+prepare_krb5_conf() {
+    local tab=$'\t'
+    cat << EOF > /etc/krb5.conf
+[libdefaults]
+${tab}default_realm = ${DOMAIN_FQDN}
+${tab}dns_lookup_realm = false
+${tab}dns_lookup_kdc = true
+EOF
 
     return 0
 }
