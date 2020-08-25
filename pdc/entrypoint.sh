@@ -279,6 +279,13 @@ ${tab}dns_lookup_realm = false
 ${tab}dns_lookup_kdc = true
 EOF
 
+    let ret=$?
+
+    if [[ $ret -ne 0 ]]; then
+        echo "ERROR: Failed to modify /etc/krb5.conf" >&2
+        return 1
+    fi
+
     return 0
 }
 
