@@ -7,10 +7,15 @@ function setup() {
     stub mv
     stub echo
     stub prepare_hosts
+    stub prepare_krb5_conf
+
+    export DC_TYPE="PRIMARY_DC"
 }
 
 function teardown() {
     rm -f /etc/krb5.conf /etc/samba/smb.conf
+    unset RESTORE_FROM
+    unset DC_TYPE
     unset RESTORE_FROM
 }
 
@@ -21,6 +26,43 @@ function teardown() {
     [[ "$status" -eq 0 ]]
     [[ "$(stub_called_times mv)"                    -eq 0 ]]
     [[ "$(stub_called_times prepare_hosts)"         -eq 1 ]]
+    [[ "$(stub_called_times prepare_krb5_conf)"     -eq 0 ]]
+    [[ "$(stub_called_times echo)"                  -eq 0 ]]
+}
+
+@test '#pre_provisioning should return 0 if DC_TYPE="SECONDARY_DC"' {
+    rm -f /etc/samba/smb.conf
+    unset RESTORE_FROM
+    run pre_provisioning; command echo "$output"
+
+    [[ "$status" -eq 0 ]]
+    [[ "$(stub_called_times prepare_krb5_conf)"     -eq 0 ]]
+    [[ "$(stub_called_times mv)"                    -eq 0 ]]
+    [[ "$(stub_called_times prepare_hosts)"         -eq 1 ]]
+    [[ "$(stub_called_times echo)"                  -eq 0 ]]
+}
+
+@test '#pre_provisioning should return 0 if DC_TYPE="PRIMARY_DC" && RESTORE_FROM="JOINING_DOMAIN"' {
+    rm -f /etc/samba/smb.conf
+    export RESTORE_FROM="JOINING_DOMAIN"
+    run pre_provisioning; command echo "$output"
+
+    [[ "$status" -eq 0 ]]
+    [[ "$(stub_called_times prepare_krb5_conf)"     -eq 1 ]]
+    [[ "$(stub_called_times mv)"                    -eq 0 ]]
+    [[ "$(stub_called_times prepare_hosts)"         -eq 0 ]]
+    [[ "$(stub_called_times echo)"                  -eq 0 ]]
+}
+
+@test '#pre_provisioning should return 0 if DC_TYPE="PRIMARY_DC" && RESTORE_FROM="IP"' {
+    rm -f /etc/samba/smb.conf
+    export RESTORE_FROM="192.168.1.73"
+    run pre_provisioning; command echo "$output"
+
+    [[ "$status" -eq 0 ]]
+    [[ "$(stub_called_times prepare_krb5_conf)"     -eq 1 ]]
+    [[ "$(stub_called_times mv)"                    -eq 0 ]]
+    [[ "$(stub_called_times prepare_hosts)"         -eq 0 ]]
     [[ "$(stub_called_times echo)"                  -eq 0 ]]
 }
 
@@ -29,6 +71,7 @@ function teardown() {
     run pre_provisioning; command echo "$output"
 
     [[ "$status" -eq 0 ]]
+    [[ "$(stub_called_times prepare_krb5_conf)"     -eq 0 ]]
     [[ "$(stub_called_times mv)"                    -eq 0 ]]
     [[ "$(stub_called_times prepare_hosts)"         -eq 0 ]]
     [[ "$(stub_called_times echo)"                  -eq 0 ]]
@@ -38,6 +81,7 @@ function teardown() {
     run pre_provisioning; command echo "$output"
 
     [[ "$status" -eq 0 ]]
+    [[ "$(stub_called_times prepare_krb5_conf)"     -eq 0 ]]
     [[ "$(stub_called_times mv)"                    -eq 1 ]]
     [[ "$(stub_called_times prepare_hosts)"         -eq 1 ]]
     [[ "$(stub_called_times echo)"                  -eq 0 ]]
