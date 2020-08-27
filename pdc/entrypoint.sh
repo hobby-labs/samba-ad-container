@@ -292,7 +292,7 @@ EOF
 prepare_hosts() {
     local reg_container_ip=$(sed -e 's/\./\\./g' <<< "$CONTAINER_IP")
 
-    sed -i -e "s/${reg_container_ip} .*/${CONTAINER_IP} ${HOSTNAME} ${HOSTNAME}.${DOMAIN_FQDN,,}/g" /etc/hosts
+    printf "%s\n" "s/^${reg_container_ip}\s.*/${CONTAINER_IP} ${HOSTNAME} ${HOSTNAME}.${DOMAIN_FQDN,,}/g" wq | ed -s /etc/hosts
 
     grep -q -E "^${reg_container_ip} .*" /etc/hosts || {
         echo "ERROR: Failed to edit /etc/hosts. Could not add hosts information of ${HOSTNAME} ${HOSTNAME}.${DOMAIN_FQDN,,}" >&2
