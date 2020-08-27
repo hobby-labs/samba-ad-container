@@ -6,7 +6,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
         winbind libnss-winbind libpam-winbind \
         supervisor openvpn inetutils-ping \
         libpam-krb5 krb5-config krb5-user \
-        vim git dnsutils net-tools && \
+        vim git dnsutils net-tools ed && \
         apt-get clean && \
         rm -f /etc/samba/smb.conf /etc/krb5.conf
 
