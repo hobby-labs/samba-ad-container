@@ -50,7 +50,7 @@ function teardown() {
     [[ "$status" -eq 0 ]]
     [[ "$(stub_called_times prepare_krb5_conf)"     -eq 1 ]]
     [[ "$(stub_called_times mv)"                    -eq 0 ]]
-    [[ "$(stub_called_times prepare_hosts)"         -eq 0 ]]
+    [[ "$(stub_called_times prepare_hosts)"         -eq 1 ]]
     [[ "$(stub_called_times echo)"                  -eq 0 ]]
 }
 
@@ -62,7 +62,7 @@ function teardown() {
     [[ "$status" -eq 0 ]]
     [[ "$(stub_called_times prepare_krb5_conf)"     -eq 1 ]]
     [[ "$(stub_called_times mv)"                    -eq 0 ]]
-    [[ "$(stub_called_times prepare_hosts)"         -eq 0 ]]
+    [[ "$(stub_called_times prepare_hosts)"         -eq 1 ]]
     [[ "$(stub_called_times echo)"                  -eq 0 ]]
 }
 
@@ -73,7 +73,7 @@ function teardown() {
     [[ "$status" -eq 0 ]]
     [[ "$(stub_called_times prepare_krb5_conf)"     -eq 0 ]]
     [[ "$(stub_called_times mv)"                    -eq 0 ]]
-    [[ "$(stub_called_times prepare_hosts)"         -eq 0 ]]
+    [[ "$(stub_called_times prepare_hosts)"         -eq 1 ]]
     [[ "$(stub_called_times echo)"                  -eq 0 ]]
 }
 
@@ -94,7 +94,7 @@ function teardown() {
 
     [[ "$status" -eq 1 ]]
     [[ "$(stub_called_times mv)"                    -eq 1 ]]
-    [[ "$(stub_called_times prepare_hosts)"         -eq 0 ]]
+    [[ "$(stub_called_times prepare_hosts)"         -eq 1 ]]
     [[ "$(stub_called_times echo)"                  -eq 1 ]]
 
     stub_called_with_exactly_times mv 1 "-f" "/etc/samba/smb.conf" "/etc/samba/smb.conf.bak"
@@ -106,7 +106,7 @@ function teardown() {
     run pre_provisioning; command echo "$output"
 
     [[ "$status" -eq 1 ]]
-    [[ "$(stub_called_times mv)"                    -eq 1 ]]
+    [[ "$(stub_called_times mv)"                    -eq 0 ]]
     [[ "$(stub_called_times prepare_hosts)"         -eq 1 ]]
     [[ "$(stub_called_times echo)"                  -eq 0 ]]
 }

@@ -246,7 +246,10 @@ pre_provisioning() {
         prepare_krb5_conf || return 1
     fi
 
-    # There no instructions when restore-phase.
+    # Edit /etc/hosts
+    prepare_hosts || return 1
+
+    # There are no instructions when restore-phase.
     [[ ! -z "$RESTORE_FROM" ]] && return 0
 
     # /etc/krb5.conf and /etc/samba/smb.conf has already removed at creating docker images.
@@ -263,9 +266,6 @@ pre_provisioning() {
         # Set the flag to restore smb.conf after provisioning
         FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=1
     fi
-
-    # Edit /etc/hosts
-    prepare_hosts || return 1
 
     return 0
 }
@@ -292,6 +292,8 @@ EOF
 prepare_hosts() {
     local reg_container_ip=$(sed -e 's/\./\\./g' <<< "$CONTAINER_IP")
 
+    # Use ed instead of sed to keep the i-node of the file.
+    # If you try to use sed, the instruction will be failed due to mounting /etc/hosts by docker process.
     printf "%s\n" "s/^${reg_container_ip}\s.*/${CONTAINER_IP} ${HOSTNAME} ${HOSTNAME}.${DOMAIN_FQDN,,}/g" wq | ed -s /etc/hosts
 
     grep -q -E "^${reg_container_ip} .*" /etc/hosts || {
