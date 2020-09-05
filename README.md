@@ -34,18 +34,7 @@ docker run --name pdc01 --hostname pdc01 \
 You should specify IP of the `--dns` as same as the value of `--ip`.
 This prevent the DNS update error after running Samba.
 
-## Environment variables
-| Name of variable | Required | Devault value | Note |
-| ---------------- | -------- | ------------- | ---- |
-| DC_TYPE          | Yes      | -             | This parameter requires "**PRIMARY_DC**" or "**SECONDARY_DC**". "PRIMARY_DC" will build a Samba as a primary DC or restore from backups. "SECONDARY_DC" will build a Samba as a secondary DC. |
-| CONTAINER_IP     | No       | Interface IP of the docker | It is recommended to specify container IP if you have multiple IPs except loopback address. This parameter will be used as a listen IP of the Samba daemon. |
-| DOMAIN_FQDN | No | mysite.example.com | Samba domain FQDN. It is not required but recommended to specify it that will be used your own site. |
-| DOMAIN | No | (Upper case of the first element of DOMAIN_FQDN that splitted by ".") | Domain name of your DC. For example, if you do not specify it and you specified DOMAIN_FQDN=corp.mysite.example.com, "CORP" will be used. |
-| ADMIN_PASSWORD | No | p@ssword0 | Password of the Administrator. You can change it after running Samba with samba-tool command. |
-| DNS_FORWARDER | No | 8.8.8.8 | DNS forwarder for the Samba. This value will be written as the "dns forwarder" in /etc/samba/smb.conf |
-| RESTORE_FROM | No | (specify a type of method to restore) | Type of method to restore AD. There are 2 types of options like `BACKUP_FILE` and `JOINING_A_DOMAIN`. `BACKUP_FILE` will restore AD from a backup file that locatated in specific directory `/backup` on the container. `JOINING_A_DOMAIN` will restore AD by joining a current domain. As a point of caution, `JOINING_A_DOMAIN` will transfer roles to AD from current master AD. |
-
-## Use users smb.conf
+## Use user specified smb.conf
 Mount /etc/samba directory that contains smb.conf if you want to use smb.conf as user's own.
 
 ```
@@ -60,6 +49,17 @@ smb.conf you mounted will be used in the Samba process.
 And do not specify the ro(Read only) option.
 This cause errors during provisioning process.
 
+## Environment variables
+| Name of variable | Required | Devault value | Note |
+| ---------------- | -------- | ------------- | ---- |
+| DC_TYPE          | Yes      | -             | This parameter requires "**PRIMARY_DC**" or "**SECONDARY_DC**". "PRIMARY_DC" will build a Samba as a primary DC or restore from backups. "SECONDARY_DC" will build a Samba as a secondary DC. |
+| CONTAINER_IP     | No       | Interface IP of the docker | It is recommended to specify container IP if you have multiple IPs except loopback address. This parameter will be used as a listen IP of the Samba daemon. |
+| DOMAIN_FQDN | No | mysite.example.com | Samba domain FQDN. It is not required but recommended to specify it that will be used your own site. |
+| DOMAIN | No | (Upper case of the first element of DOMAIN_FQDN that splitted by ".") | Domain name of your DC. For example, if you do not specify it and you specified DOMAIN_FQDN=corp.mysite.example.com, "CORP" will be used. |
+| ADMIN_PASSWORD | No | p@ssword0 | Password of the Administrator. You can change it after running Samba with samba-tool command. |
+| DNS_FORWARDER | No | 8.8.8.8 | DNS forwarder for the Samba. This value will be written as the "dns forwarder" in /etc/samba/smb.conf |
+| RESTORE_FROM | No | (specify a type of method to restore) | Type of method to restore AD. There are 2 types of options like `BACKUP_FILE` and `JOINING_A_DOMAIN`. `BACKUP_FILE` will restore AD from a backup file that locatated in specific directory `/backup` on the container. `JOINING_A_DOMAIN` will restore AD by joining a current domain. As a point of caution, `JOINING_A_DOMAIN` will transfer roles to AD from current master AD. |
+
 ## Backup PDC
 You can use samba-tool to backup Samba data.
 
@@ -71,7 +71,7 @@ You can use samba-tool to backup Samba data.
 -> samba-backup-corp.mysite.example.com-YYYY-MM-DDThh-mm-ss.SSSSSS.tar.bz2
 ```
 
-Then you should save `samba-backup-corp.mysite.example.com-YYYY-MM-DDThh-mm-ss.SSSSSS.tar.bz2` to more safely place like NAS or cloud storage not to missing it.
+Then you should save `samba-backup-corp.mysite.example.com-YYYY-MM-DDThh-mm-ss.SSSSSS.tar.bz2` (file name will be different by your domain name) to more safely place like NAS or cloud storage not to missing it.
 
 ## Backup PDC (Unofficial way)
 You can run the container mounting `/etc/samba` and `/var/lib/samba` on the container like below.
@@ -88,7 +88,7 @@ You can run the container mounting `/etc/samba` and `/var/lib/samba` on the cont
     -d hobbylabs/samba-ad-container
 ```
 
-Then you should save data `/data/pdc01/etc/samba` and `/data/pdc01/var/lib/samba` to more safely place like NAS or cloud storage not to missing it.
+Then you can save data `/data/pdc01/etc/samba` and `/data/pdc01/var/lib/samba` to more safely place like NAS or cloud storage not to missing it.
 
 ## Restore PDC
 TODO:
