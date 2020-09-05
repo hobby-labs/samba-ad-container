@@ -58,7 +58,7 @@ This cause errors during provisioning process.
 | DOMAIN | No | (Upper case of the first element of DOMAIN_FQDN that splitted by ".") | Domain name of your DC. For example, if you do not specify it and you specified DOMAIN_FQDN=corp.mysite.example.com, "CORP" will be used. |
 | ADMIN_PASSWORD | No | p@ssword0 | Password of the Administrator. You can change it after running Samba with samba-tool command. |
 | DNS_FORWARDER | No | 8.8.8.8 | DNS forwarder for the Samba. This value will be written as the "dns forwarder" in /etc/samba/smb.conf |
-| RESTORE_FROM | No | (specify a type of method to restore) | Type of method to restore AD. There are 2 types of options like `BACKUP_FILE` and `JOINING_A_DOMAIN`. `BACKUP_FILE` will restore AD from a backup file that locatated in specific directory `/backup` on the container. `JOINING_A_DOMAIN` will restore AD by joining a current domain. As a point of caution, `JOINING_A_DOMAIN` will transfer roles to AD from current master AD. |
+| RESTORE_FROM | No | (specify a type of method to restore) | Type of method to restore AD. There are 2 types of options like `BACKUP_FILE` and `JOINING_DOMAIN`. `BACKUP_FILE` will restore AD from a backup file that locatated in specific directory `/backup` on the container. `JOINING_DOMAIN` will restore AD by joining a current domain. As a point of caution, `JOINING_DOMAIN` will transfer roles to AD from current master AD. |
 
 ## Backup PDC
 You can use samba-tool to backup Samba data.
