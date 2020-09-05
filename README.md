@@ -106,10 +106,10 @@ Run the container with this conditions.
 
 * Set environment variables `-e DC_TYPE="PRIMARY_DC"` and `-e RESTORE_FROM="BACKUP_FILE"`
 * Mounting a volume `/path/to/backup` on the host to `/backup` on the container
-* Specify the name of a container differ from the PDC that running previously. Use `rpdc01` in this section.
+* Specify the name of a container differ from the PDC that running previously. Use `rpdc` in this section.
 
 ```
-docker run --name rpdc01 --hostname rpdc01 \
+docker run --name rpdc --hostname rpdc \
     -e DC_TYPE="PRIMARY_DC" \
     -e RESTORE_FROM="BACKUP_FILE" \
     --network office_network \
