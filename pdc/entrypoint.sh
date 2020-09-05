@@ -5,6 +5,9 @@ INITIALIZED_FLAG_FILE="/.dc_has_initialized"
 # Flag whether need to restore smb.conf after provisioning
 FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=0
 
+# Num of check count when up samba
+CHECK_COUNT_WHETHER_SAMBA_IS_RUNNING=100
+
 # Regex of the IP from here https://stackoverflow.com/a/13778973/4307818
 REG_IP='^(0*(1?[0-9]{1,2}|2([0-4][0-9]|5[0-5]))\.){3}0*(1?[0-9]{1,2}|2([0-4][0-9]|5[0-5]))$'
 
@@ -185,18 +188,38 @@ build_primary_dc_with_backup_file() {
 build_primary_dc_with_joining_domain() {
     local dns_ip="$1"
 
-    change_ip_of_dns "$dns_ip" || return 1
-    join_domain || return 1
+    change_ip_of_dns "$dns_ip"  || return 1
+    join_domain                 || return 1
+    transfer_fsmo               || return 1
+    restore_dns                 || return 1
 
-    # Move roles to this host
+    return 0
+}
+
+transfer_fsmo() {
+    # Run samba to transfer fsmo
+    /usr/sbin/samba
+
+    # Wait until samba is running
+    echo "Waiting for samba is running..."
+    local i
+    for i in $(seq 1 ${CHECK_COUNT_WHETHER_SAMBA_IS_RUNNING}); do
+        samba-tool group list > /dev/null 2>&1 && break
+        sleep 0.5
+    done
+
+    if [[ $i -eq ${CHECK_COUNT_WHETHER_SAMBA_IS_RUNNING} ]]; then
+        echo "ERROR: Failed to up samba to transfer fsmo with command \"/usr/sbin/samba\"." >&2
+        return 1
+    fi
+
     samba-tool fsmo transfer --role=all -U Administrator%${ADMIN_PASSWORD} || {
-        echo "ERROR: Failed to transfer fsmo from DC $dns_ip" >&2
+        echo "ERROR: Failed to transfer fsmo from current DC" >&2
         return 1
     }
 
-    restore_dns || return 1
-
-    return 0
+    pkill samba
+    sleep 0.5
 }
 
 change_ip_of_dns() {
