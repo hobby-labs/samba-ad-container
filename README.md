@@ -91,10 +91,37 @@ You can run the container mounting `/etc/samba` and `/var/lib/samba` on the cont
 Then you can save data `/data/pdc01/etc/samba` and `/data/pdc01/var/lib/samba` to more safely place like NAS or cloud storage not to missing it.
 
 ## Restore PDC
-TODO:
-This program will add a feature to restore data like this journal.
-
+### Remitations of restoring PDC
+You will take a little complex strategy to restore PDC if you want to restore it with a same name of the PDC that running previously.
+The reason why we have to do so is because there are no method to restore like this so far.
+The strategy to restore PDC as a same name of the PDC that running previously is like the link below.
 https://github.com/hobby-labs/samba-ad-container/wiki/Strategies-of-backup-and-restore-AD#restore-strategies
+
+I will explain how to restore PDC as a same name in this section.
+
+### Restore PDC from the file first
+Prepare the directory that contains a backup file on your host.
+In this explanation, it assumes that the directory is `/path/to/backup`.
+Run the container with this conditions.
+
+* Set environment variables `-e DC_TYPE="PRIMARY_DC"` and `-e RESTORE_FROM="BACKUP_FILE"`
+* Mounting a volume `/path/to/backup` on the host to `/backup` on the container
+* Specify the name of a container differ from the PDC that running previously. Use `rpdc01` in this section.
+
+```
+docker run --name rpdc01 --hostname rpdc01 \
+    -e DC_TYPE="PRIMARY_DC" \
+    -e RESTORE_FROM="BACKUP_FILE" \
+    --network office_network \
+    --privileged \
+    --ip 192.168.1.73 \
+    --dns 192.168.1.73 \
+    --volume ${PWD}/example/backup:/backup \
+    -ti hobbylabs/samba-ad-container:develop
+```
+
+### Restore PDC with that same name that running previously with joining a domain from restored PDC
+TODO
 
 ## Restore PDC (Unofficial way)
 Restore data `/etc/samba` and `/var/lib/samba` to the directory on the host.
