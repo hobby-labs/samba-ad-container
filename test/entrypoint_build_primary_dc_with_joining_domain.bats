@@ -5,6 +5,7 @@ function setup() {
     stub change_ip_of_dns
     stub join_domain
     stub transfer_fsmo
+    stub demote_dc
     stub restore_dns
 
     export DOMAIN_FQDN="corp.mysite.example.com"
@@ -22,8 +23,9 @@ function teardown() {
     [[ "$status" -eq 0 ]]
     [[ "$(stub_called_times change_ip_of_dns)"  -eq 1 ]]
     [[ "$(stub_called_times join_domain)"       -eq 1 ]]
-    [[ "$(stub_called_times restore_dns)"       -eq 1 ]]
     [[ "$(stub_called_times transfer_fsmo)"     -eq 1 ]]
+    [[ "$(stub_called_times demote_dc)"         -eq 1 ]]
+    [[ "$(stub_called_times restore_dns)"       -eq 1 ]]
 }
 
 @test '#build_primary_dc_with_joining_domain should return 1 if change_ip_of_dns has failed' {
@@ -33,8 +35,9 @@ function teardown() {
     [[ "$status" -eq 1 ]]
     [[ "$(stub_called_times change_ip_of_dns)"  -eq 1 ]]
     [[ "$(stub_called_times join_domain)"       -eq 0 ]]
-    [[ "$(stub_called_times restore_dns)"       -eq 0 ]]
     [[ "$(stub_called_times transfer_fsmo)"     -eq 0 ]]
+    [[ "$(stub_called_times demote_dc)"         -eq 0 ]]
+    [[ "$(stub_called_times restore_dns)"       -eq 0 ]]
 }
 
 @test '#build_primary_dc_with_joining_domain should return 1 if join_domain has failed' {
@@ -44,18 +47,44 @@ function teardown() {
     [[ "$status" -eq 1 ]]
     [[ "$(stub_called_times change_ip_of_dns)"  -eq 1 ]]
     [[ "$(stub_called_times join_domain)"       -eq 1 ]]
-    [[ "$(stub_called_times restore_dns)"       -eq 0 ]]
     [[ "$(stub_called_times transfer_fsmo)"     -eq 0 ]]
+    [[ "$(stub_called_times demote_dc)"         -eq 0 ]]
+    [[ "$(stub_called_times restore_dns)"       -eq 0 ]]
 }
 
-@test '#build_primary_dc_with_joining_domain should return 1 if transfer_fsmo transfer has failed' {
+@test '#build_primary_dc_with_joining_domain should return 1 if transfer_fsmo has failed' {
     stub_and_eval transfer_fsmo '{ return 1; }'
     run build_primary_dc_with_joining_domain; command echo "$output"
 
     [[ "$status" -eq 1 ]]
     [[ "$(stub_called_times change_ip_of_dns)"  -eq 1 ]]
     [[ "$(stub_called_times join_domain)"       -eq 1 ]]
-    [[ "$(stub_called_times restore_dns)"       -eq 0 ]]
     [[ "$(stub_called_times transfer_fsmo)"     -eq 1 ]]
+    [[ "$(stub_called_times demote_dc)"         -eq 0 ]]
+    [[ "$(stub_called_times restore_dns)"       -eq 0 ]]
+}
+
+@test '#build_primary_dc_with_joining_domain should return 1 if demote_dc has failed' {
+    stub_and_eval demote_dc '{ return 1; }'
+    run build_primary_dc_with_joining_domain; command echo "$output"
+
+    [[ "$status" -eq 1 ]]
+    [[ "$(stub_called_times change_ip_of_dns)"  -eq 1 ]]
+    [[ "$(stub_called_times join_domain)"       -eq 1 ]]
+    [[ "$(stub_called_times transfer_fsmo)"     -eq 1 ]]
+    [[ "$(stub_called_times demote_dc)"         -eq 1 ]]
+    [[ "$(stub_called_times restore_dns)"       -eq 0 ]]
+}
+
+@test '#build_primary_dc_with_joining_domain should return 1 if restore_dns has failed' {
+    stub_and_eval restore_dns '{ return 1; }'
+    run build_primary_dc_with_joining_domain; command echo "$output"
+
+    [[ "$status" -eq 1 ]]
+    [[ "$(stub_called_times change_ip_of_dns)"  -eq 1 ]]
+    [[ "$(stub_called_times join_domain)"       -eq 1 ]]
+    [[ "$(stub_called_times transfer_fsmo)"     -eq 1 ]]
+    [[ "$(stub_called_times demote_dc)"         -eq 1 ]]
+    [[ "$(stub_called_times restore_dns)"       -eq 1 ]]
 }
 
