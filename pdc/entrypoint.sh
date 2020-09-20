@@ -191,7 +191,19 @@ build_primary_dc_with_joining_domain() {
     change_ip_of_dns "$dns_ip"  || return 1
     join_domain                 || return 1
     transfer_fsmo               || return 1
+    demote_dc                   || return 1
     restore_dns                 || return 1
+
+    return 0
+}
+
+demote_dc() {
+    # TODO: This program only suppport to demote dc named rpdc.
+
+    samba-tool domain demote --remove_other-dead-server=rpdc -U Administrator%${ADPMIN_PASSWORD} || {
+        echo "ERROR: Failed to demote rpdc with command \"samba-tool domain demote --remove_other-dead-server=rpdc" >&2
+        return 1
+    }
 
     return 0
 }
