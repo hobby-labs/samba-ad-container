@@ -200,8 +200,8 @@ build_primary_dc_with_joining_domain() {
 demote_dc() {
     # TODO: This program only suppport to demote dc named rpdc.
 
-    samba-tool domain demote --remove_other-dead-server=rpdc -U Administrator%${ADPMIN_PASSWORD} || {
-        echo "ERROR: Failed to demote rpdc with command \"samba-tool domain demote --remove_other-dead-server=rpdc" >&2
+    samba-tool domain demote --remove-other-dead-server=rpdc -U Administrator%${ADMIN_PASSWORD} || {
+        echo "ERROR: Failed to demote rpdc with command \"samba-tool domain demote --remove-other-dead-server=rpdc\"" >&2
         return 1
     }
 
