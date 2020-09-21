@@ -100,7 +100,7 @@ https://github.com/hobby-labs/samba-ad-container/wiki/Strategies-of-backup-and-r
 
 I will explain how to restore PDC as a same name in this section.
 
-### Restore PDC from the file first
+### Restore temporary PDC first
 Prepare the directory that contains a backup file on your host.
 In this explanation, it assumes that the directory is `/path/to/backup`.
 Run the container with this conditions.
