@@ -160,7 +160,7 @@ docker run --name bdc01 --hostname bdc01 \
 Specify the IP of the primary DC to `--dns 192.168.1.71`.
 Otherwise `samba-tool domain join` as secondary DC will be fail.
 
-## Use users smb.conf
+## Use users smb.conf on secondary DC
 You can also use your smb.conf similar to the primary DC.
 
 ```
@@ -171,7 +171,7 @@ docker run --name bdc01 --hostname bdc01 \
     -d hobbylabs/samba-ad-container
 ```
 
-## Backup
+## Backup secondary DC
 You can backup secondary DC by copying config files.
 
 ```
@@ -179,8 +179,9 @@ docker exec -ti bdc01 cp /etc/samba/smb.conf
 ```
 
 Additionally, backup other config files if smb.conf include them.
+And you need not take any backup data because it will be restored from primary DC in restore process.
 
-## Restore
+## Restore secondary DC
 You can restore secondary DC by running samba-ad-container with smb.conf that backupped previously.
 
 ```
