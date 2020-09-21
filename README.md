@@ -58,7 +58,7 @@ This cause errors during provisioning process.
 | DOMAIN | No | (Upper case of the first element of DOMAIN_FQDN that splitted by ".") | Domain name of your DC. For example, if you do not specify it and you specified DOMAIN_FQDN=corp.mysite.example.com, "CORP" will be used. |
 | ADMIN_PASSWORD | No | p@ssword0 | Password of the Administrator. You can change it after running Samba with samba-tool command. |
 | DNS_FORWARDER | No | 8.8.8.8 | DNS forwarder for the Samba. This value will be written as the "dns forwarder" in /etc/samba/smb.conf |
-| RESTORE_FROM | No | (specify a type of method to restore) | Type of method to restore AD. There are 2 types of options like `BACKUP_FILE` and `JOINING_DOMAIN`. `BACKUP_FILE` will restore AD from a backup file that locatated in specific directory `/backup` on the container. `JOINING_DOMAIN` will restore AD by joining a current domain. As a point of caution, `JOINING_DOMAIN` will transfer roles to AD from current master AD. |
+| RESTORE_FROM | No | (specify a type of method to restore) | Type of method to restore AD. There are 2 types of options like `BACKUP_FILE` and `JOINING_DOMAIN`. `BACKUP_FILE` will restore AD from a backup file that locatated in specific directory `/backup` on the container. This process requires its host name is `rpdc`. `JOINING_DOMAIN` will restore AD by joining a current domain. As a point of caution, `JOINING_DOMAIN` will transfer roles to new AD from current master AD. |
 
 ## Backup PDC
 You can use samba-tool to backup Samba data.
@@ -95,6 +95,7 @@ Then you can save data `/data/pdc01/etc/samba` and `/data/pdc01/var/lib/samba` t
 You will take a little complex strategy to restore PDC if you want to restore it with a same name of the PDC that running previously.
 The reason why we have to do so is because there are no method to restore like this so far.
 The strategy to restore PDC as a same name of the PDC that running previously is like the link below.
+
 https://github.com/hobby-labs/samba-ad-container/wiki/Strategies-of-backup-and-restore-AD#restore-strategies
 
 I will explain how to restore PDC as a same name in this section.
@@ -105,7 +106,7 @@ In this explanation, it assumes that the directory is `/path/to/backup`.
 Run the container with this conditions.
 
 * Set environment variables `-e DC_TYPE="PRIMARY_DC"` and `-e RESTORE_FROM="BACKUP_FILE"`
-* Mounting a volume `/path/to/backup` on the host to `/backup` on the container
+* Mounting a volume `/path/to/backup` on the host to `/backup` on the container. It assumes that the name of backup file is `samba-backup-corp.yoursite.example.com-YYYY-MM-DDThh-mm-ss.SSSSSS.tar.bz2`
 * Specify the name of a container differ from the PDC that running previously. Use `rpdc` in this section.
 
 ```
@@ -117,11 +118,38 @@ docker run --name rpdc --hostname rpdc \
     --ip 192.168.1.73 \
     --dns 192.168.1.73 \
     --volume ${PWD}/example/backup:/backup \
-    -ti hobbylabs/samba-ad-container:develop
+    -ti hobbylabs/samba-ad-container
 ```
 
 ### Restore PDC with that same name that running previously with joining a domain from restored PDC
-TODO
+Restore new PDC named `pdc01` after `rpdc` launches properly.
+Run the container with the option `RESTORE_FROM="JOINING_DOMAIN"`, your `DOMAIN_FQDN` and `ADMIN_PASSWORD`.
+And you should specify `--dns 192.168.1.73` as your `rpdc`'IP.
+
+```
+docker run --name pdc01 --hostname pdc01 \
+    -e DC_TYPE="PRIMARY_DC" \
+    -e RESTORE_FROM="JOINING_DOMAIN" \
+    -e DOMAIN_FQDN="corp.mysite.example.com" \
+    -e ADMIN_PASSWORD="secret" \
+    --network office_network \
+    --privileged \
+    --ip 192.168.1.71 \
+    --dns 192.168.1.71 \
+    --dns 192.168.1.73 \
+    -ti hobbylabs/samba-ad-container
+```
+
+This instruction will restore new AD by joining domain from `rpdc` and demote `rpdc`.
+It means new AD `pdc01` get the rights of primary AD from `rpdc` then remove them from it.
+
+### Remove rpdc
+After succeeded restoring new AD `pdc01`, you can delete `rpdc`.
+
+```
+docker stop rpdc
+docker rm rpdc
+```
 
 ## Restore PDC (Unofficial way)
 Restore data `/etc/samba` and `/var/lib/samba` to the directory on the host.
