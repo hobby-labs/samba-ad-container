@@ -251,9 +251,11 @@ docker run --name bdc01 --hostname bdc01 \
 ## Run a fuluentd container
 Run a fuluentd container with binding host's ports '24224'.
 ```
-docker run -d -p 24224:24224 -p 24224:24224/udp -v /data:/fluentd/log \
+mkdir -p /var/docker/fluentd/data
+chmod -R 777 /var/docker/fluentd
+docker run -d -p 24224:24224 -p 24224:24224/udp -v /var/docker/fluentd/data:/fluentd \
     --hostname fluentd --name fluentd \
-    fluent/fluentd
+    fluentd
 ```
 
 ## Run a samba container with a fuluentd's log driver
