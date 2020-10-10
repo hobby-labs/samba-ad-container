@@ -246,3 +246,24 @@ docker run --name bdc01 --hostname bdc01 \
     ......
     -d hobbylabs/samba-ad-container
 ```
+
+# Run the samba container with fluentd's log driver
+## Run a fuluentd container
+Run a fuluentd container with binding host's ports '24224'.
+```
+docker run -d -p 24224:24224 -p 24224:24224/udp -v /data:/fluentd/log fluent/fluentd
+```
+
+## Run a samba container with a fuluentd's log driver
+
+```
+docker run --name pdc01 --hostname pdc01 \
+    -e DC_TYPE="PRIMARY_DC" \
+    -e DOMAIN_FQDN="corp.mysite.example.com" \
+    --network office_network \
+    --privileged \
+    --ip 192.168.1.71 \
+    --dns 192.168.1.71 \
+    --log-driver=fluentd --log-opt fluentd-address=${HOST_IP}:24224 --log-opt tag="docker.{{.Name}}" \    # <- logdriver
+    -d hobbylabs/samba-ad-container
+```
