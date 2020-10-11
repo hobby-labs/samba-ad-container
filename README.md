@@ -247,18 +247,18 @@ docker run --name bdc01 --hostname bdc01 \
     -d hobbylabs/samba-ad-container
 ```
 
-# Run the samba container with fluentd's log driver
-## Run a fuluentd container
+# Persistence logs
+## Use fluentd log driver
 Run a fuluentd container with binding host's ports '24224'.
 ```
-mkdir -p /var/docker/fluentd/data
-chmod -R 777 /var/docker/fluentd
-docker run -d -p 24224:24224 -p 24224:24224/udp -v /var/docker/fluentd/data:/fluentd \
+mkdir -p /var/docker/fluentd/data/log
+sudo chmod -R 777 /var/docker/fluentd/data/log
+docker run -d -p 24224:24224 -p 24224:24224/udp -v /var/docker/fluentd/data/log:/fluentd/log \
     --hostname fluentd --name fluentd \
     fluentd
 ```
 
-## Run a samba container with a fuluentd's log driver
+Run a samba container with a fuluentd's log driver
 
 ```
 docker run --name pdc01 --hostname pdc01 \
@@ -268,6 +268,12 @@ docker run --name pdc01 --hostname pdc01 \
     --privileged \
     --ip 192.168.1.71 \
     --dns 192.168.1.71 \
-    --log-driver=fluentd --log-opt fluentd-address=${HOST_IP}:24224 --log-opt tag="docker.{{.Name}}" \    # <- logdriver
+    --log-driver=fluentd --log-opt fluentd-address=x.x.x.x:24224 --log-opt tag="docker.{{.Name}}" \
     -d hobbylabs/samba-ad-container
 ```
+
+Logs will be save in `/var/docker/fluentd/data/log` on the host machine.
+
+## Use syslog driver
+TODO:
+
