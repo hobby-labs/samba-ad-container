@@ -253,9 +253,12 @@ Run a fuluentd container with binding host's ports '24224'.
 ```
 mkdir -p /var/docker/fluentd/data/log
 sudo chmod -R 777 /var/docker/fluentd/data/log
-docker run -d -p 24224:24224 -p 24224:24224/udp -v /var/docker/fluentd/data/log:/fluentd/log \
+sudo ln -s /var/docker/fluentd/data /fluentd
+docker run -d -p 24224:24224 -p 24224:24224/udp \
+    -v /var/docker/fluentd/data/log:/fluentd/log \
+    -v /var/docker/fluentd/data/etc:/fluentd/etc \
     --hostname fluentd --name fluentd \
-    fluentd [-c /path/to/fluent.conf]
+    fluentd
 ```
 
 Run a samba container with a fuluentd's log driver
