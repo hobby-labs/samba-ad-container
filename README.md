@@ -255,7 +255,7 @@ mkdir -p /var/docker/fluentd/data/log
 sudo chmod -R 777 /var/docker/fluentd/data/log
 docker run -d -p 24224:24224 -p 24224:24224/udp -v /var/docker/fluentd/data/log:/fluentd/log \
     --hostname fluentd --name fluentd \
-    fluentd
+    fluentd [-c /path/to/fluent.conf]
 ```
 
 Run a samba container with a fuluentd's log driver
