@@ -23,11 +23,12 @@ function teardown() {
 
     [[ "$status" -eq 0 ]]
     [[ "$(stub_called_times mv)"                        -eq 0 ]]
-    [[ "$(stub_called_times sed)"                       -eq 1 ]]
+    [[ "$(stub_called_times sed)"                       -eq 2 ]]
     [[ "$(stub_called_times echo)"                      -eq 0 ]]
     [[ "$(stub_called_times set_winbind_to_nsswitch)"   -eq 1 ]]
 
     stub_called_with_exactly_times sed 1 "-i" "-e" "s/dns forwarder = .*/dns forwarder = 8.8.8.8/g" /etc/samba/smb.conf
+    stub_called_with_exactly_times sed 1 "-i" "-e" '/^\[global\]/a\\tlog level = 5' /etc/samba/smb.conf
 }
 
 @test '#post_provisioning should return 0 if RESTORE_FROM=JOINING_A_DOMAIN' {
@@ -65,7 +66,7 @@ function teardown() {
     [[ "$(stub_called_times set_winbind_to_nsswitch)"   -eq 1 ]]
 }
 
-@test '#post_provisioning should return 1 if mv returns NOT 0 and FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=0' {
+@test '#post_provisioning should return 1 if sed returns NOT 0 and FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=0' {
     stub_and_eval sed '{ return 1; }'
     run post_provisioning; command echo "$output"
 
@@ -77,6 +78,24 @@ function teardown() {
 
     stub_called_with_exactly_times sed 1 "-i" "-e" "s/dns forwarder = .*/dns forwarder = 8.8.8.8/g" "/etc/samba/smb.conf"
     stub_called_with_exactly_times echo 1 "ERROR: Failed to modify /etc/samba/smb.conf to change \"dns forwarder = 8.8.8.8\" after DC has provisioned"
+}
+
+@test '#post_provisioning should return 1 if sed to add log level returns NOT 0 and FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=0' {
+    stub_and_eval sed '{
+        [[ "$3" == "/^\[global\]/a\\\\tlog level = 5" ]] && return 1;
+        return 0;
+    }'
+    run post_provisioning; command echo "$output"
+
+    [[ "$status" -eq 1 ]]
+    [[ "$(stub_called_times mv)"                        -eq 0 ]]
+    [[ "$(stub_called_times sed)"                       -eq 2 ]]
+    [[ "$(stub_called_times echo)"                      -eq 1 ]]
+    [[ "$(stub_called_times set_winbind_to_nsswitch)"   -eq 1 ]]
+
+    stub_called_with_exactly_times sed 1 "-i" "-e" "s/dns forwarder = .*/dns forwarder = 8.8.8.8/g" "/etc/samba/smb.conf"
+    stub_called_with_exactly_times sed 1 "-i" "-e" "/^\[global\]/a\\\\tlog level = 5" "/etc/samba/smb.conf"
+    stub_called_with_exactly_times echo 1 "ERROR: Failed to add log level in /etc/samba/smb.conf"
 }
 
 @test '#post_provisioning should return 1 if mv returns NOT 0 and FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=1' {

@@ -276,6 +276,10 @@ join_domain() {
 
 pre_provisioning() {
 
+    # Prepare krb5.conf if...
+    # * DC_TYPE == "SECONDARY_DC"
+    # * DC_TYPE == "PRIMARY_DC" && RESTORE_FROM == "JOINING_DOMAIN"
+    # * DC_TYPE == "PRIMARY_DC" && RESTORE_FROM == "(some IP address)"
     if [[ "${DC_TYPE}" == "SECONDARY_DC" ]] || \
             ( [[ "${DC_TYPE}" == "PRIMARY_DC" ]] && ( [[ "$RESTORE_FROM" == "JOINING_DOMAIN" ]] || [[ "$RESTORE_FROM" =~ $REG_IP ]] ) ); then
         prepare_krb5_conf || return 1
@@ -344,7 +348,7 @@ post_provisioning() {
 
     set_winbind_to_nsswitch || return 1
 
-    # There no other instructions when restore-phase.
+    # There are no other instructions when restore-phase.
     [[ ! -z "$RESTORE_FROM" ]] && return 0
 
     if [[ $FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV -eq 1 ]]; then
@@ -360,6 +364,12 @@ post_provisioning() {
         # Change dns forwarder in /etc/samba/smb.conf
         sed -i -e "s/dns forwarder = .*/dns forwarder = ${DNS_FORWARDER}/g" /etc/samba/smb.conf || {
             echo "ERROR: Failed to modify /etc/samba/smb.conf to change \"dns forwarder = ${DNS_FORWARDER}\" after DC has provisioned" >&2
+            return 1
+        }
+
+        # Default configuration file smb.conf does not have log level. This program will add it.
+        sed -i -e '/^\[global\]/a\\tlog level = 5' /etc/samba/smb.conf || {
+            echo "ERROR: Failed to add log level in /etc/samba/smb.conf" >&2
             return 1
         }
     fi
