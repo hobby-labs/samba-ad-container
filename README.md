@@ -278,5 +278,29 @@ docker run --name pdc01 --hostname pdc01 \
 Logs will be save in `/var/docker/fluentd/data/log` on the host machine.
 
 ## Use syslog driver
-TODO:
+First, prepare syslog server.
+This repository contains an example config file for syslog-ng and you can use it.
+```
+docker run --rm -it -p 514:514/udp -p 601:601 \
+    --name syslog-ng \
+    --volume ${PWD}/container/syslog-ng/etc/syslog-ng/syslog-ng.conf:/etc/syslog-ng/syslog-ng.conf \
+    balabit/syslog-ng
+```
 
+Secound, you can run the Samba container with logging driver syslog.
+
+```
+docker run --rm --name pdc01 --hostname pdc01 \
+    -e DC_TYPE="PRIMARY_DC" \
+    -e DOMAIN_FQDN="corp.mysite.example.com" \
+    --network office_network \
+    --privileged \
+    --ip 192.168.1.71 \
+    --dns 192.168.1.71 \
+    --log-driver=syslog \
+    --log-opt tag="pdc01" \
+    --log-opt syslog-address=udp://x.x.x.x:514 \
+    hobbylabs/samba-ad-container
+```
+
+Then you can see logs `/var/log/containers/pdc01/syslog.log` on the `syslog-ng` container.
