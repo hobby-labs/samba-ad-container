@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 LABEL maintainer "Tsutomu Nakamura<tsuna.0x00@gmail.com>"
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
