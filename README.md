@@ -86,6 +86,8 @@ This cause errors during provisioning process.
 | DNS_FORWARDER | No | 8.8.8.8 | DNS forwarder for the Samba. This value will be written as the "dns forwarder" in /etc/samba/smb.conf |
 | RESTORE_FROM | No | (specify a type of method to restore) | Type of method to restore AD. There are 2 types of options like `BACKUP_FILE` and `JOINING_DOMAIN`. `BACKUP_FILE` will restore AD from a backup file that locatated in specific directory `/backup` on the container. This process requires its host name is `rpdc`. `JOINING_DOMAIN` will restore AD by joining a current domain. As a point of caution, `JOINING_DOMAIN` will transfer roles to new AD from current master AD. |
 
+# Backup and Restore
+
 ## Backup PDC
 You can use samba-tool to backup Samba data.
 
