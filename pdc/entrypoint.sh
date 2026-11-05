@@ -2,6 +2,9 @@
 
 INITIALIZED_FLAG_FILE="/.dc_has_initialized"
 
+# Samba AD database. It exists if /var/lib/samba of a DC that has already provisioned is mounted.
+SAM_LDB_FILE="/var/lib/samba/private/sam.ldb"
+
 # Flag whether need to restore smb.conf after provisioning
 FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=0
 
@@ -84,18 +87,48 @@ init_env_variables() {
 run_dc() {
 
     if ! is_already_initialized; then
-        build_dc
+        if has_existing_dc_data; then
+            # The container was recreated with persisted /etc/samba and /var/lib/samba.
+            # Provisioning must be skipped, otherwise it destroys the existing domain.
+            echo "INFO: Found existing DC data ${SAM_LDB_FILE}. Provisioning will be skipped."
+            prepare_existing_dc || {
+                echo "ERROR: Failed to prepare the container for existing DC data" >&2
+                return 1
+            }
+        else
+            build_dc
 
-        local ret=$?
-        if [[ "$ret" -ne 0 ]]; then
-            echo "ERROR: Failed to build dc"
-            return 1
+            local ret=$?
+            if [[ "$ret" -ne 0 ]]; then
+                echo "ERROR: Failed to build dc"
+                return 1
+            fi
         fi
 
         flag_initialized
     fi
 
     start_samba
+}
+
+has_existing_dc_data() {
+    [[ -f "$SAM_LDB_FILE" ]]
+}
+
+# Prepare files which are not persisted in /etc/samba and /var/lib/samba
+# (they are re-created for each container).
+prepare_existing_dc() {
+    if [[ ! -f "/etc/samba/smb.conf" ]]; then
+        echo "ERROR: ${SAM_LDB_FILE} exists but /etc/samba/smb.conf does not." \
+             "Mount /etc/samba that contains smb.conf of the existing DC as well as /var/lib/samba." \
+             "This program does not provision to prevent destroying existing DC data." >&2
+        return 1
+    fi
+
+    prepare_hosts           || return 1
+    set_winbind_to_nsswitch || return 1
+
+    return 0
 }
 
 build_dc() {

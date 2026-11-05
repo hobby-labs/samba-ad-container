@@ -367,6 +367,8 @@ scenario_volume_restore() {
         "$PDC_NAME" "$PDC_HOST" "$PDC_IP" -e DC_TYPE="PRIMARY_DC" --dns "$PDC_IP" "${volumes[@]}" || return 1
 
     log "[volume_restore] Checking recreated PDC"
+    check_output "Provisioning was skipped"         'Found existing DC data .* Provisioning will be skipped' \
+        docker logs "$PDC_NAME"
     sid_after="$(get_domain_sid "$PDC_NAME")"
     check "Domain SID is unchanged (${sid_before:-?})" \
         test -n "$sid_before" -a "$sid_before" == "$sid_after"
@@ -374,6 +376,30 @@ scenario_volume_restore() {
         docker exec "$PDC_NAME" samba-tool user list -d0
     check_kinit "Kerberos kinit with existing user" \
         "$PDC_NAME" /var/lib/samba/private/krb5.conf "$TEST_USER" "$TEST_PASSWORD"
+    check_output "/etc/hosts has FQDN"              "^$(re "$PDC_IP") ${PDC_HOST} ${PDC_HOST}\.$(re "$DOMAIN_FQDN")" \
+        docker exec "$PDC_NAME" cat /etc/hosts
+    check_output "nsswitch passwd uses winbind"     '^passwd:.* winbind' \
+        docker exec "$PDC_NAME" cat /etc/nsswitch.conf
+    check_output "getent resolves domain user"      "^${DOMAIN}\\\\${TEST_USER}:" \
+        docker exec "$PDC_NAME" getent passwd "${DOMAIN}\\${TEST_USER}"
+
+    log "[volume_restore] Recreating ${PDC_NAME} with /var/lib/samba only (without /etc/samba)"
+    docker rm -f "$PDC_NAME" > /dev/null
+    start_dc "$PDC_NAME" "$PDC_HOST" "$PDC_IP" -e DC_TYPE="PRIMARY_DC" --dns "$PDC_IP" \
+        --volume "${VOLUME_LIB}:/var/lib/samba"
+    check_output "Container stopped with an error"  '^exited 1$' \
+        bash -c "docker wait '$PDC_NAME' > /dev/null; docker inspect -f '{{.State.Status}} {{.State.ExitCode}}' '$PDC_NAME'"
+    check_output "Error tells to mount /etc/samba"  'smb.conf does not\. Mount /etc/samba' \
+        docker logs "$PDC_NAME"
+
+    log "[volume_restore] Recreating ${PDC_NAME} with both volumes again"
+    docker rm -f "$PDC_NAME" > /dev/null
+    start_and_wait "Primary DC came up again" 180 \
+        "$PDC_NAME" "$PDC_HOST" "$PDC_IP" -e DC_TYPE="PRIMARY_DC" --dns "$PDC_IP" "${volumes[@]}" || return 1
+    check "Domain SID is still unchanged" \
+        test -n "$sid_before" -a "$sid_before" == "$(get_domain_sid "$PDC_NAME")"
+    check_output "User still exists"                "^${TEST_USER}$" \
+        docker exec "$PDC_NAME" samba-tool user list -d0
 }
 
 # --------------------------------------------------------------------------- main

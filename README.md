@@ -196,6 +196,10 @@ Then you can just run the container with mounting them like below.
     -d hobbylabs/samba-ad-container
 ```
 
+The container skips provisioning when `/var/lib/samba/private/sam.ldb` exists, and uses existing data as it is.
+You have to mount both `/etc/samba` and `/var/lib/samba`.
+The container stops with an error if only `/var/lib/samba` is mounted, so as not to destroy existing data.
+
 # How to run a secondary DC
 ## Prerequisite of secondary DC
 Secondary DC requires primary DC.
