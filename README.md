@@ -306,3 +306,35 @@ docker run --rm --name pdc01 --hostname pdc01 \
 ```
 
 Then you can see logs `/var/log/containers/pdc01/syslog.log` on the `syslog-ng` container.
+
+# Testing
+## Unit tests
+Unit tests of `pdc/entrypoint.sh` are written with [bats](https://github.com/bats-core/bats-core).
+You only need docker on your machine.
+The test image is built from `test/container/Dockerfile` (bats v1.1.0) automatically.
+
+```
+make test                                       # run all tests
+make test TEST_FILE=test/entrypoint_main.bats   # run a specific test file
+```
+
+You can also run tests in the same way as CircleCI does.
+
+```
+docker run --rm -v "${PWD}:/a" -w /a hobbylabs/test-samba-ad-container make test
+```
+
+## Smoke test
+Smoke test builds the image from `pdc/Dockerfile` and runs a primary DC and a secondary DC on docker
+to verify that DNS, LDAP, SMB, Kerberos, winbind and replication work.
+
+```
+make smoke-test
+```
+
+| Name of variable | Default value | Note |
+| ---------------- | ------------- | ---- |
+| IMAGE | samba-ad-container:smoke | Image tag to build and test |
+| SKIP_BUILD | 0 | Set `1` to skip `docker build` |
+| KEEP | 0 | Set `1` to keep containers and the network after the test |
+| SUBNET_PREFIX | 172.30.99 | First 3 octets of the docker network used by the test |
