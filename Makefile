@@ -4,4 +4,8 @@ test:
 test-suite:
 	./test/bin/start.sh --suite
 
-.PHONY: test test-suite
+# Build the image from pdc/Dockerfile and run a real PDC/BDC on docker to verify it works.
+smoke-test:
+	./test/smoke/run.sh
+
+.PHONY: test test-suite smoke-test
