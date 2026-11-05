@@ -325,8 +325,13 @@ docker run --rm -v "${PWD}:/a" -w /a hobbylabs/test-samba-ad-container make test
 ```
 
 ## Smoke test
-Smoke test builds the image from `pdc/Dockerfile` and runs a primary DC and a secondary DC on docker
-to verify that DNS, LDAP, SMB, Kerberos, winbind and replication work.
+Smoke test builds the image from `pdc/Dockerfile` and runs real DCs on docker with these scenarios.
+
+| Scenario | Description |
+| -------- | ----------- |
+| basic | Run a primary DC and a secondary DC. Verify that DNS, LDAP, SMB, Kerberos, winbind and replication work. |
+| backup_restore | [Backup PDC](#backup-pdc) and [Restore PDC](#restore-pdc): take an online backup, lose the PDC, restore `rpdc` from the backup file, restore `pdc01` by joining the domain and remove `rpdc`. |
+| volume_restore | [Backup PDC (Unofficial way)](#backup-pdc-unofficial-way) and [Restore PDC (Unofficial way)](#restore-pdc-unofficial-way): recreate the PDC container with persisted `/etc/samba` and `/var/lib/samba`. |
 
 ```
 make smoke-test
@@ -336,5 +341,6 @@ make smoke-test
 | ---------------- | ------------- | ---- |
 | IMAGE | samba-ad-container:smoke | Image tag to build and test |
 | SKIP_BUILD | 0 | Set `1` to skip `docker build` |
-| KEEP | 0 | Set `1` to keep containers and the network after the test |
+| KEEP | 0 | Set `1` to keep containers, volumes and the network of the last scenario after the test |
 | SUBNET_PREFIX | 172.30.99 | First 3 octets of the docker network used by the test |
+| SCENARIOS | basic backup_restore volume_restore | Space separated scenarios to run. e.g. `SCENARIOS=backup_restore make smoke-test` |
