@@ -5,7 +5,7 @@
 # Usage: test/bin/start.sh [<test file or directory> ...]
 #   Runs all tests under ./test if no argument is given.
 #
-# Inside a container (e.g. CircleCI) bats is executed directly.
+# Inside a container (e.g. hobbylabs/test-samba-ad-container) bats is executed directly.
 # On a host, the test image is built from test/container/Dockerfile and bats runs in it.
 #
 # Environment variables:

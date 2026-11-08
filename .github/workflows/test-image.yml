@@ -1,0 +1,75 @@
+name: Test image
+
+# Build hobbylabs/test-samba-ad-container (bats image used to run unit tests)
+# from test/container/Dockerfile, verify it runs all unit tests, and push it to Docker Hub.
+#
+# | Event                                       | Push | Docker Hub tags |
+# | ------------------------------------------- | ---- | --------------- |
+# | pull_request changing test/container/**     | no   | -               |
+# | push to master changing test/container/**   | yes  | latest          |
+# | workflow_dispatch                           | yes  | latest          |
+#
+# Required repository secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'test/container/**'
+      - '.github/workflows/test-image.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'test/container/**'
+      - '.github/workflows/test-image.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: hobbylabs/test-samba-ad-container
+
+jobs:
+  test-image:
+    name: Build, verify and push
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: test/container
+          load: true
+          tags: ${{ env.IMAGE }}:latest
+          cache-from: type=gha,scope=test-image
+          cache-to: type=gha,scope=test-image,mode=max
+
+      - name: Run unit tests in the image
+        run: docker run --rm -v "${PWD}:/a" -w /a "${IMAGE}:latest" make test
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v7
+        with:
+          context: test/container
+          push: true
+          tags: ${{ env.IMAGE }}:latest
+          cache-from: type=gha,scope=test-image

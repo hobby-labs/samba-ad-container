@@ -342,7 +342,7 @@ make test                                       # run all tests
 make test TEST_FILE=test/entrypoint_main.bats   # run a specific test file
 ```
 
-You can also run tests in the same way as CircleCI does.
+You can also run tests in the published test image `hobbylabs/test-samba-ad-container`.
 
 ```
 docker run --rm -v "${PWD}:/a" -w /a hobbylabs/test-samba-ad-container make test
@@ -369,3 +369,30 @@ make smoke-test
 | KEEP | 0 | Set `1` to keep containers, volumes and the network of the last scenario after the test |
 | SUBNET_PREFIX | 172.30.99 | First 3 octets of the docker network used by the test |
 | SCENARIOS | basic backup_restore volume_restore user_krb5_conf | Space separated scenarios to run. e.g. `SCENARIOS=backup_restore make smoke-test` |
+
+# CI and release
+GitHub Actions builds and tests images, and pushes them to Docker Hub.
+
+| Workflow | Event | What it does | Docker Hub tags |
+| -------- | ----- | ------------ | --------------- |
+| [Docker image](.github/workflows/docker-image.yml) | Pull request | Unit tests, build, smoke test | - (not pushed) |
+| | Push to `master` | Unit tests, build, smoke test, push | `master`, `sha-<short sha>` |
+| | Push tag `vX.Y.Z` | Unit tests, build, smoke test, push | `X.Y.Z`, `X.Y`, `X`, `latest` |
+| [Test image](.github/workflows/test-image.yml) | Push to `master` changing `test/container/` | Build `hobbylabs/test-samba-ad-container`, run unit tests in it, push | `latest` |
+
+Only the image that passed the smoke test is pushed.
+`latest` is updated only by release tags (not by pre-release tags like `v2.0.0-rc.1`).
+
+To release a new version, push a tag.
+
+```
+git tag v2.0.0
+git push origin v2.0.0
+```
+
+Workflows require these repository secrets.
+
+| Secret | Value |
+| ------ | ----- |
+| DOCKERHUB_USERNAME | Docker Hub user name |
+| DOCKERHUB_TOKEN | Docker Hub access token with Read & Write scope |
