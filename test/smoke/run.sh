@@ -14,13 +14,14 @@
 #                   (RESTORE_FROM=JOINING_DOMAIN) -> remove rpdc
 #   volume_restore  "Backup/Restore PDC (Unofficial way)" in README.md:
 #                   recreate the PDC container with persisted /etc/samba and /var/lib/samba
+#   user_krb5_conf  /etc/krb5.conf mounted by a user is not modified (primary DC and secondary DC)
 #
 # Environment variables:
 #   IMAGE          Image tag to build/test           (default: samba-ad-container:smoke)
 #   SKIP_BUILD     Set to 1 to skip "docker build"    (default: 0)
 #   KEEP           Set to 1 to keep containers, volumes and network after the test (default: 0)
 #   SUBNET_PREFIX  First 3 octets of the test network (default: 172.30.99)
-#   SCENARIOS      Space separated scenarios to run   (default: "basic backup_restore volume_restore")
+#   SCENARIOS      Space separated scenarios to run   (default: "basic backup_restore volume_restore user_krb5_conf")
 
 set -u
 
@@ -31,7 +32,7 @@ IMAGE="${IMAGE:-samba-ad-container:smoke}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 KEEP="${KEEP:-0}"
 SUBNET_PREFIX="${SUBNET_PREFIX:-172.30.99}"
-SCENARIOS="${SCENARIOS:-basic backup_restore volume_restore}"
+SCENARIOS="${SCENARIOS:-basic backup_restore volume_restore user_krb5_conf}"
 
 NETWORK="samba-ad-smoke"
 PDC_NAME="smoke-pdc01"
@@ -56,7 +57,7 @@ ADMIN_PASSWORD='Sm0ke-Adm1n!pass'
 TEST_USER="smokeuser"
 TEST_PASSWORD='Sm0ke-Us3r!pass'
 
-BACKUP_DIR=""
+WORK_DIR=""                 # temporary directory on the host (backup files, users' krb5.conf)
 PASSED=0
 FAILED=0
 FAILED_SCENARIOS=()
@@ -116,14 +117,14 @@ remove_volumes() {
 
 cleanup() {
     if [[ "$KEEP" == "1" ]]; then
-        log "KEEP=1: leaving containers, volumes, network ${NETWORK} and backup dir ${BACKUP_DIR:-(none)}"
+        log "KEEP=1: leaving containers, volumes, network ${NETWORK} and work dir ${WORK_DIR:-(none)}"
         return
     fi
     log "Cleaning up"
     remove_containers
     remove_volumes
     docker network rm "$NETWORK" > /dev/null 2>&1
-    [[ -n "$BACKUP_DIR" ]] && rm -rf "$BACKUP_DIR"
+    [[ -n "$WORK_DIR" ]] && rm -rf "$WORK_DIR"
 }
 
 # start_dc <container> <hostname> <ip> [<extra docker run args>...]
@@ -178,19 +179,27 @@ dump_logs() {
     docker logs --tail 50 "$1" 2>&1 | sed 's/^/  | /'
 }
 
-# Run a command in a container with Kerberos configured from the provisioned krb5.conf.
-# (The image removes /etc/krb5.conf; samba generates krb5.conf under its private dir.)
-# kexec <container> <krb5.conf> <command...>
-kexec() {
-    local name="$1" krb5_conf="$2"; shift 2
-    docker exec -e KRB5_CONFIG="$krb5_conf" "$name" "$@"
+# check_kinit <description> <container> <user> <password>
+# kinit without realm and without KRB5_CONFIG: it requires /etc/krb5.conf with the correct default realm.
+check_kinit() {
+    local desc="$1" name="$2" user="$3" password="$4"
+    check_output "$desc" "Default principal: ${user}@${REALM}" \
+        docker exec "$name" bash -c "kdestroy -A > /dev/null 2>&1; echo '${password}' | kinit ${user} > /dev/null && klist"
 }
 
-# check_kinit <description> <container> <krb5.conf> <user> <password>
-check_kinit() {
-    local desc="$1" name="$2" krb5_conf="$3" user="$4" password="$5"
-    check_output "$desc" "Default principal: ${user}@${REALM}" \
-        kexec "$name" "$krb5_conf" bash -c "echo '${password}' | kinit ${user}@${REALM} > /dev/null && klist"
+# check_smb_kerberos <description> <container> <host> <user> <password>
+# Access a share with a Kerberos ticket (as Windows clients do with a host name).
+check_smb_kerberos() {
+    local desc="$1" name="$2" host="$3" user="$4" password="$5"
+    check_output "$desc" '^\s+\.\.\s+D\s' \
+        docker exec "$name" bash -c "kdestroy -A > /dev/null 2>&1; echo '${password}' | kinit ${user} > /dev/null && \
+            smbclient '//${host}.${DOMAIN_FQDN}/netlogon' --use-kerberos=required -c ls"
+}
+
+# check_krb5_conf <container>
+check_krb5_conf() {
+    check_output "/etc/krb5.conf has default realm ${REALM}" "^\s*default_realm = $(re "$REALM")$" \
+        docker exec "$1" cat /etc/krb5.conf
 }
 
 # samba-tool over LDAP with Administrator credentials. Useful for a DC which runs with
@@ -241,8 +250,11 @@ scenario_basic() {
         docker exec "$PDC_NAME" samba-tool user create "$TEST_USER" "$TEST_PASSWORD" -d0
     check_output "SMB shares (sysvol/netlogon)"     'netlogon' \
         docker exec "$PDC_NAME" smbclient -L "$PDC_IP" -U "${TEST_USER}%${TEST_PASSWORD}"
+    check_krb5_conf "$PDC_NAME"
     check_kinit "Kerberos kinit as ${TEST_USER}" \
-        "$PDC_NAME" /var/lib/samba/private/krb5.conf "$TEST_USER" "$TEST_PASSWORD"
+        "$PDC_NAME" "$TEST_USER" "$TEST_PASSWORD"
+    check_smb_kerberos "SMB share with Kerberos ticket" \
+        "$PDC_NAME" "$PDC_HOST" "$TEST_USER" "$TEST_PASSWORD"
     check_output "winbind lists users"              "${DOMAIN}\\\\${TEST_USER}" \
         docker exec "$PDC_NAME" wbinfo -u
     check_output "getent resolves domain user"      "^${DOMAIN}\\\\${TEST_USER}:" \
@@ -260,8 +272,11 @@ scenario_basic() {
         st_ldap "$BDC_NAME" "$BDC_IP" user list
     check_output "DRS replication from PDC"         'Last attempt .* was successful' \
         docker exec "$BDC_NAME" samba-tool drs showrepl -U "Administrator%${ADMIN_PASSWORD}" -d0
+    check_krb5_conf "$BDC_NAME"
     check_kinit "Kerberos kinit against BDC" \
-        "$BDC_NAME" /var/lib/samba/private/krb5.conf "$TEST_USER" "$TEST_PASSWORD"
+        "$BDC_NAME" "$TEST_USER" "$TEST_PASSWORD"
+    check_smb_kerberos "SMB share on BDC with Kerberos ticket" \
+        "$BDC_NAME" "$BDC_HOST" "$TEST_USER" "$TEST_PASSWORD"
 }
 
 scenario_backup_restore() {
@@ -279,7 +294,7 @@ scenario_backup_restore() {
         docker exec "$PDC_NAME" samba-tool domain backup online --targetdir=/var/tmp \
             --server=127.0.0.1 -U "Administrator%${ADMIN_PASSWORD}" -d0
     backup_file="$(docker exec "$PDC_NAME" sh -c 'ls /var/tmp/samba-backup-*.tar.bz2' 2>/dev/null | head -1)"
-    if [[ -z "$backup_file" ]] || ! docker cp "${PDC_NAME}:${backup_file}" "${BACKUP_DIR}/" > /dev/null; then
+    if [[ -z "$backup_file" ]] || ! docker cp "${PDC_NAME}:${backup_file}" "${WORK_DIR}/backup/" > /dev/null; then
         fail "Copy backup file from PDC"
         return 1
     fi
@@ -294,7 +309,7 @@ scenario_backup_restore() {
     start_and_wait "rpdc restored from backup file and came up" 300 \
         "$RPDC_NAME" "$RPDC_HOST" "$RPDC_IP" --network-alias "$RPDC_HOST" \
         -e DC_TYPE="PRIMARY_DC" -e RESTORE_FROM="BACKUP_FILE" \
-        --dns "$RPDC_IP" --volume "${BACKUP_DIR}:/backup:ro" || return 1
+        --dns "$RPDC_IP" --volume "${WORK_DIR}/backup:/backup:ro" || return 1
 
     log "[backup_restore] Checking rpdc"
     # (samba overwrites its process title, so "-s <smb.conf>" can not be checked from cmdline)
@@ -310,8 +325,9 @@ scenario_backup_restore() {
         st_ldap "$RPDC_NAME" "$RPDC_IP" fsmo show
     check_output "DNS SRV _ldap._tcp on rpdc"       "has SRV record .* ${RPDC_HOST}\.$(re "$DOMAIN_FQDN")" \
         docker exec "$RPDC_NAME" host -t SRV "_ldap._tcp.${DOMAIN_FQDN}" "$RPDC_IP"
+    check_krb5_conf "$RPDC_NAME"
     check_kinit "Kerberos kinit against rpdc" \
-        "$RPDC_NAME" /var/lib/restored_samba/private/krb5.conf "$TEST_USER" "$TEST_PASSWORD"
+        "$RPDC_NAME" "$TEST_USER" "$TEST_PASSWORD"
 
     # ---------------------------------------------------------------- pdc01
     log "[backup_restore] Restoring ${PDC_NAME} (${PDC_IP}) by joining the domain from rpdc"
@@ -344,8 +360,11 @@ scenario_backup_restore() {
         docker exec "$PDC_NAME" host -t SRV "_ldap._tcp.${DOMAIN_FQDN}" "$PDC_IP"
     check_output "SMB shares on pdc01"              'netlogon' \
         docker exec "$PDC_NAME" smbclient -L "$PDC_IP" -U "${TEST_USER}%${TEST_PASSWORD}"
+    check_krb5_conf "$PDC_NAME"
     check_kinit "Kerberos kinit against pdc01" \
-        "$PDC_NAME" /var/lib/samba/private/krb5.conf "$TEST_USER" "$TEST_PASSWORD"
+        "$PDC_NAME" "$TEST_USER" "$TEST_PASSWORD"
+    check_smb_kerberos "SMB share on pdc01 with Kerberos ticket" \
+        "$PDC_NAME" "$PDC_HOST" "$TEST_USER" "$TEST_PASSWORD"
     check "Create a new user on pdc01 (RID pool works)" \
         docker exec "$PDC_NAME" samba-tool user create "${TEST_USER}2" "$TEST_PASSWORD" -d0
 }
@@ -374,8 +393,9 @@ scenario_volume_restore() {
         test -n "$sid_before" -a "$sid_before" == "$sid_after"
     check_output "User still exists"                "^${TEST_USER}$" \
         docker exec "$PDC_NAME" samba-tool user list -d0
+    check_krb5_conf "$PDC_NAME"
     check_kinit "Kerberos kinit with existing user" \
-        "$PDC_NAME" /var/lib/samba/private/krb5.conf "$TEST_USER" "$TEST_PASSWORD"
+        "$PDC_NAME" "$TEST_USER" "$TEST_PASSWORD"
     check_output "/etc/hosts has FQDN"              "^$(re "$PDC_IP") ${PDC_HOST} ${PDC_HOST}\.$(re "$DOMAIN_FQDN")" \
         docker exec "$PDC_NAME" cat /etc/hosts
     check_output "nsswitch passwd uses winbind"     '^passwd:.* winbind' \
@@ -402,6 +422,49 @@ scenario_volume_restore() {
         docker exec "$PDC_NAME" samba-tool user list -d0
 }
 
+scenario_user_krb5_conf() {
+    local pdc_conf="${WORK_DIR}/pdc01-krb5.conf" bdc_conf="${WORK_DIR}/bdc01-krb5.conf"
+    local tab=$'\t'
+    local name f
+
+    # Users' krb5.conf. The comment is a marker to make sure the files are not replaced.
+    for f in "$pdc_conf" "$bdc_conf"; do
+        printf '%s\n' \
+            "# krb5.conf prepared by a user" \
+            "[libdefaults]" \
+            "${tab}default_realm = ${REALM}" \
+            "${tab}dns_lookup_realm = false" \
+            "${tab}dns_lookup_kdc = true" \
+            "${tab}ticket_lifetime = 8h" > "$f"
+        cp "$f" "${f}.orig"
+    done
+
+    log "[user_krb5_conf] Starting primary DC ${PDC_NAME} (${PDC_IP}) with user's /etc/krb5.conf"
+    start_and_wait "Primary DC came up" 180 \
+        "$PDC_NAME" "$PDC_HOST" "$PDC_IP" -e DC_TYPE="PRIMARY_DC" --dns "$PDC_IP" \
+        --volume "${pdc_conf}:/etc/krb5.conf" || return 1
+    check "Create user ${TEST_USER}" \
+        docker exec "$PDC_NAME" samba-tool user create "$TEST_USER" "$TEST_PASSWORD" -d0
+
+    log "[user_krb5_conf] Starting secondary DC ${BDC_NAME} (${BDC_IP}) with user's /etc/krb5.conf"
+    start_and_wait "Secondary DC joined and came up" 300 \
+        "$BDC_NAME" "$BDC_HOST" "$BDC_IP" -e DC_TYPE="SECONDARY_DC" --dns "$PDC_IP" \
+        --volume "${bdc_conf}:/etc/krb5.conf" || return 1
+
+    log "[user_krb5_conf] Checking that users' krb5.conf were not modified"
+    for name in "$PDC_NAME" "$BDC_NAME"; do
+        f="$pdc_conf"; [[ "$name" == "$BDC_NAME" ]] && f="$bdc_conf"
+        check_output "${name}: entrypoint noticed user's krb5.conf" 'krb5\.conf exists\. It is assumed to be mounted by a user' \
+            docker logs "$name"
+        check "${name}: krb5.conf on the host is unchanged" \
+            cmp "$f" "${f}.orig"
+        check_output "${name}: user's krb5.conf is used in the container" '^# krb5\.conf prepared by a user$' \
+            docker exec "$name" cat /etc/krb5.conf
+        check_kinit "${name}: Kerberos kinit with user's krb5.conf" \
+            "$name" "$TEST_USER" "$TEST_PASSWORD"
+    done
+}
+
 # --------------------------------------------------------------------------- main
 
 main() {
@@ -409,7 +472,7 @@ main() {
 
     for scenario in $SCENARIOS; do
         if ! declare -F "scenario_${scenario}" > /dev/null; then
-            echo "ERROR: Unknown scenario \"${scenario}\". Available: basic backup_restore volume_restore" >&2
+            echo "ERROR: Unknown scenario \"${scenario}\". Available: basic backup_restore volume_restore user_krb5_conf" >&2
             exit 1
         fi
     done
@@ -426,7 +489,8 @@ main() {
     remove_volumes
     docker network rm "$NETWORK" > /dev/null 2>&1
     docker network create --subnet "${SUBNET_PREFIX}.0/24" "$NETWORK" > /dev/null || exit 1
-    BACKUP_DIR="$(mktemp -d -t samba-ad-smoke-backup.XXXXXX)" || exit 1
+    WORK_DIR="$(mktemp -d -t samba-ad-smoke.XXXXXX)" || exit 1
+    mkdir -p "${WORK_DIR}/backup"
 
     for scenario in $SCENARIOS; do
         # Each scenario starts from a clean state.

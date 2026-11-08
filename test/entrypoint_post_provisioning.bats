@@ -9,6 +9,7 @@ function setup() {
     stub sed
     stub echo
     stub set_winbind_to_nsswitch
+    stub install_krb5_conf
     export DNS_FORWARDER="8.8.8.8"
 }
 
@@ -26,6 +27,7 @@ function teardown() {
     [[ "$(stub_called_times sed)"                       -eq 2 ]]
     [[ "$(stub_called_times echo)"                      -eq 0 ]]
     [[ "$(stub_called_times set_winbind_to_nsswitch)"   -eq 1 ]]
+    [[ "$(stub_called_times install_krb5_conf)"         -eq 1 ]]
 
     stub_called_with_exactly_times sed 1 "-i" "-e" "s/dns forwarder = .*/dns forwarder = 8.8.8.8/g" /etc/samba/smb.conf
     stub_called_with_exactly_times sed 1 "-i" "-e" '/^\[global\]/a\\tlog level = 5' /etc/samba/smb.conf
@@ -40,6 +42,7 @@ function teardown() {
     [[ "$(stub_called_times sed)"                       -eq 0 ]]
     [[ "$(stub_called_times echo)"                      -eq 0 ]]
     [[ "$(stub_called_times set_winbind_to_nsswitch)"   -eq 1 ]]
+    [[ "$(stub_called_times install_krb5_conf)"         -eq 1 ]]
 }
 
 @test '#post_provisioning should return 0 if all instructions has succeeded and FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=1' {
@@ -51,6 +54,7 @@ function teardown() {
     [[ "$(stub_called_times sed)"                       -eq 0 ]]
     [[ "$(stub_called_times echo)"                      -eq 0 ]]
     [[ "$(stub_called_times set_winbind_to_nsswitch)"   -eq 1 ]]
+    [[ "$(stub_called_times install_krb5_conf)"         -eq 1 ]]
 
     stub_called_with_exactly_times mv 1 "-f" "/etc/samba/smb.conf.bak" "/etc/samba/smb.conf"
 }
@@ -64,6 +68,7 @@ function teardown() {
     [[ "$(stub_called_times sed)"                       -eq 0 ]]
     [[ "$(stub_called_times echo)"                      -eq 0 ]]
     [[ "$(stub_called_times set_winbind_to_nsswitch)"   -eq 1 ]]
+    [[ "$(stub_called_times install_krb5_conf)"         -eq 0 ]]
 }
 
 @test '#post_provisioning should return 1 if sed returns NOT 0 and FLAG_RESTORE_USERS_SMB_CONF_AFTER_PROV=0' {
@@ -75,6 +80,7 @@ function teardown() {
     [[ "$(stub_called_times sed)"                       -eq 1 ]]
     [[ "$(stub_called_times echo)"                      -eq 1 ]]
     [[ "$(stub_called_times set_winbind_to_nsswitch)"   -eq 1 ]]
+    [[ "$(stub_called_times install_krb5_conf)"         -eq 1 ]]
 
     stub_called_with_exactly_times sed 1 "-i" "-e" "s/dns forwarder = .*/dns forwarder = 8.8.8.8/g" "/etc/samba/smb.conf"
     stub_called_with_exactly_times echo 1 "ERROR: Failed to modify /etc/samba/smb.conf to change \"dns forwarder = 8.8.8.8\" after DC has provisioned"
@@ -92,6 +98,7 @@ function teardown() {
     [[ "$(stub_called_times sed)"                       -eq 2 ]]
     [[ "$(stub_called_times echo)"                      -eq 1 ]]
     [[ "$(stub_called_times set_winbind_to_nsswitch)"   -eq 1 ]]
+    [[ "$(stub_called_times install_krb5_conf)"         -eq 1 ]]
 
     stub_called_with_exactly_times sed 1 "-i" "-e" "s/dns forwarder = .*/dns forwarder = 8.8.8.8/g" "/etc/samba/smb.conf"
     stub_called_with_exactly_times sed 1 "-i" "-e" "/^\[global\]/a\\\\tlog level = 5" "/etc/samba/smb.conf"
@@ -108,6 +115,7 @@ function teardown() {
     [[ "$(stub_called_times sed)"                       -eq 0 ]]
     [[ "$(stub_called_times echo)"                      -eq 1 ]]
     [[ "$(stub_called_times set_winbind_to_nsswitch)"   -eq 1 ]]
+    [[ "$(stub_called_times install_krb5_conf)"         -eq 1 ]]
 
     stub_called_with_exactly_times mv 1 "-f" "/etc/samba/smb.conf.bak" "/etc/samba/smb.conf"
 }

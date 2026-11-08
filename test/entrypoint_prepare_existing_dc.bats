@@ -7,6 +7,7 @@ function setup() {
 
     stub prepare_hosts
     stub set_winbind_to_nsswitch
+    stub install_krb5_conf
     stub echo
 }
 
@@ -20,6 +21,7 @@ function teardown() {
     [[ "$status" -eq 0 ]]
     [[ "$(stub_called_times prepare_hosts)"             -eq 1 ]]
     [[ "$(stub_called_times set_winbind_to_nsswitch)"   -eq 1 ]]
+    [[ "$(stub_called_times install_krb5_conf)"         -eq 1 ]]
     [[ "$(stub_called_times echo)"                      -eq 0 ]]
 }
 
@@ -52,4 +54,5 @@ function teardown() {
     [[ "$status" -eq 1 ]]
     [[ "$(stub_called_times prepare_hosts)"             -eq 1 ]]
     [[ "$(stub_called_times set_winbind_to_nsswitch)"   -eq 1 ]]
+    [[ "$(stub_called_times install_krb5_conf)"         -eq 0 ]]
 }
