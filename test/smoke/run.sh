@@ -211,8 +211,20 @@ st_ldap() {
 }
 
 # get_domain_sid <container>
+# Read the SID from sam.ldb directly (not via winbind, which may not be ready yet just after
+# samba has started). Domain SID = SID of Administrator without the RID "-500".
 get_domain_sid() {
-    docker exec "$1" wbinfo -D "$DOMAIN" 2>/dev/null | awk -F': ' '/^SID/{print $2}'
+    local name="$1" sid i
+    for i in 1 2 3 4 5; do
+        sid="$(docker exec "$name" samba-tool user show Administrator --attributes=objectSid -d0 2>/dev/null \
+            | awk '/^objectSid:/{print $2}')"
+        if [[ "$sid" == *-500 ]]; then
+            echo "${sid%-500}"
+            return 0
+        fi
+        sleep 2
+    done
+    return 1
 }
 
 # --------------------------------------------------------------------------- scenarios
