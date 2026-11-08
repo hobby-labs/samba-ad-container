@@ -111,3 +111,34 @@ function teardown() {
     [[ "$(stub_called_times echo)"                  -eq 0 ]]
 }
 
+
+@test '#pre_provisioning should not call prepare_krb5_conf if DC_TYPE="PRIMARY_DC" && RESTORE_FROM="JOINING_DOMAIN" and krb5.conf was mounted by a user' {
+    export DC_TYPE="PRIMARY_DC"
+    export RESTORE_FROM="JOINING_DOMAIN"
+    FLAG_USERS_KRB5_CONF=1
+    run pre_provisioning; command echo "$output"
+
+    [[ "$status" -eq 0 ]]
+    [[ "$(stub_called_times prepare_krb5_conf)"     -eq 0 ]]
+    [[ "$(stub_called_times prepare_hosts)"         -eq 1 ]]
+}
+
+@test '#pre_provisioning should not call prepare_krb5_conf if DC_TYPE="SECONDARY_DC" and krb5.conf was mounted by a user' {
+    export DC_TYPE="SECONDARY_DC"
+    unset RESTORE_FROM
+    FLAG_USERS_KRB5_CONF=1
+    run pre_provisioning; command echo "$output"
+
+    [[ "$status" -eq 0 ]]
+    [[ "$(stub_called_times prepare_krb5_conf)"     -eq 0 ]]
+}
+
+@test '#pre_provisioning should call prepare_krb5_conf if DC_TYPE="SECONDARY_DC" and krb5.conf was NOT mounted by a user' {
+    export DC_TYPE="SECONDARY_DC"
+    unset RESTORE_FROM
+    FLAG_USERS_KRB5_CONF=0
+    run pre_provisioning; command echo "$output"
+
+    [[ "$status" -eq 0 ]]
+    [[ "$(stub_called_times prepare_krb5_conf)"     -eq 1 ]]
+}

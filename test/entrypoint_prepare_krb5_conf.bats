@@ -29,3 +29,15 @@ function teardown() {
     stub_called_with_exactly_times echo 1 'ERROR: Failed to modify /etc/krb5.conf'
 }
 
+
+@test '#prepare_krb5_conf should write default_realm in upper case' {
+    restore cat
+    export DOMAIN_FQDN="corp.mysite.example.com"
+    KRB5_CONF_FILE="$(mktemp)"
+    run prepare_krb5_conf; command echo "$output"
+
+    [[ "$status" -eq 0 ]]
+    [[ "$(cat "$KRB5_CONF_FILE")" == $'[libdefaults]\n\tdefault_realm = CORP.MYSITE.EXAMPLE.COM\n\tdns_lookup_realm = false\n\tdns_lookup_kdc = true' ]]
+    rm -f "$KRB5_CONF_FILE"
+    unset DOMAIN_FQDN
+}
