@@ -100,7 +100,7 @@ docker run --name pdc01 --hostname pdc01 \
 | ---------------- | -------- | ------------- | ---- |
 | DC_TYPE          | Yes      | -             | This parameter requires "**PRIMARY_DC**" or "**SECONDARY_DC**". "PRIMARY_DC" will build a Samba as a primary DC or restore from backups. "SECONDARY_DC" will build a Samba as a secondary DC. |
 | CONTAINER_IP     | No       | Interface IP of the docker | It is recommended to specify container IP if you have multiple IPs except loopback address. This parameter will be used as a listen IP of the Samba daemon. |
-| DOMAIN_FQDN | No | mysite.example.com | Samba domain FQDN. It is not required but recommended to specify it that will be used your own site. |
+| DOMAIN_FQDN | No | corp.mysite.example.com | Samba domain FQDN. It is not required but recommended to specify it that will be used your own site. |
 | DOMAIN | No | (Upper case of the first element of DOMAIN_FQDN that splitted by ".") | Domain name of your DC. For example, if you do not specify it and you specified DOMAIN_FQDN=corp.mysite.example.com, "CORP" will be used. |
 | ADMIN_PASSWORD | No | p@ssword0 | Password of the Administrator. You can change it after running Samba with samba-tool command. |
 | DNS_FORWARDER | No | 8.8.8.8 | DNS forwarder for the Samba. This value will be written as the "dns forwarder" in /etc/samba/smb.conf |
